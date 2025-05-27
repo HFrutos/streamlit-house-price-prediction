@@ -1,0 +1,34 @@
+# ==================== Python ====================
+venv/               # Virtual environment
+__pycache__/        # Python bytecode cache
+*.py[cod]           # Compiled Python files (*.pyc, *.pyo, *.pyd)
+*.egg-info/         # Package metadata
+*.egg               # Old-style Python packages
+.pytest_cache/      # Pytest cache
+.ipynb_checkpoints/ # Jupyter notebook checkpoints
+
+# ==================== Data ====================
+data/raw/           # Raw scraped data (never commit)
+data/processed/     # Processed data (regeneratable)
+*.csv               # All CSV files (or whitelist specific files)
+*.parquet           # Common big-data format
+*.feather           # Another common format
+*.h5                # HDF5 files
+*.db                # SQLite databases
+*.pkl               # Pickle files (models/caches)
+*.joblib            # Scikit-learn serialized models
+
+# ==================== Secrets ====================
+.env                # Environment variables
+*.key               # API keys/certs
+credentials.json    # Optional (for OAuth/configs if added later)
+
+# ==================== IDE/Editor ====================
+.vscode/            # VSCode settings (can share if team agrees)
+.idea/              # PyCharm/IntelliJ
+.DS_Store           # macOS metadata
+
+# ==================== Build/Deploy ====================
+dist/               # Built packages
+build/              # Compiled extensions
+*.log               # Log files
