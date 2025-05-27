@@ -1,15 +1,15 @@
 # Core rules
-* text=auto eol=lf  # Auto-detect text files and normalize to LF
+* text=auto eol=lf
 
-# Explicitly handle key file types
+# Text files
 *.py text eol=lf
 *.md text eol=lf
 *.sh text eol=lf
 *.yml text eol=lf
 *.txt text eol=lf
-*.json text eol=lf
+*-json text eol=lf
 
-# Binary files (explicitly exclude from line-ending conversion)
+# Binary files
 *.png binary
 *.jpg binary
 *.pdf binary
