@@ -97,7 +97,7 @@ def clean_text(text):
         return text.strip()
     return None
 
-# --- Functions for Link and Geolocation Scraping (from listing script) ---
+# --- Functions for Link and Geolocation Scraping ---
 def get_all_property_links_and_geo(base_url, initial_page_url):
     """
     Scrapes all listing pages from pisos.com starting from initial_page_url
