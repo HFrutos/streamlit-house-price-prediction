@@ -1,0 +1,7 @@
+# Web Scraping
+requests>=2.32.0  # Minimum secure version
+beautifulsoup4>=4.12.3  # Latest stable with bug fixes
+
+# Data Handling
+pandas>=2.1.0,<2.3.0  # Avoids future 2.3.x breaking changes
+numpy>=1.26.0  # Matches pandas' compatibility
