@@ -22,6 +22,7 @@ data/processed/     # Processed data (regeneratable)
 .env                # Environment variables
 *.key               # API keys/certs
 credentials.json    # Optional (for OAuth/configs if added later)
+settings.json       # VSCode personal settings
 
 # ==================== IDE/Editor ====================
 .vscode/            # VSCode settings (can share if team agrees)
