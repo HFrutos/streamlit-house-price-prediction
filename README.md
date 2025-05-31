@@ -16,7 +16,6 @@ A Streamlit web application that provides predictions for property sale and rent
     - [1. Data Collection (Web Scraping)](#1-data-collection-web-scraping)
     - [2. Model Training (planned)](#2-model-training-planned)
     - [3. Running the Streamlit Application (planned)](#3-running-the-streamlit-application-planned)
-- [Ensure your virtual environment is active](#ensure-your-virtual-environment-is-active)
   - [License](#license)
 
 ## Project Overview
@@ -146,6 +145,7 @@ To start the Streamlit web application:
 ```bash
 # Ensure your virtual environment is active
 streamlit run app/main.py
+```
 
 ## License
 
