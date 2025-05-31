@@ -16,6 +16,7 @@ A Streamlit web application that provides predictions for property sale and rent
     - [1. Data Collection (Web Scraping)](#1-data-collection-web-scraping)
     - [2. Model Training (planned)](#2-model-training-planned)
     - [3. Running the Streamlit Application (planned)](#3-running-the-streamlit-application-planned)
+  - [File Attributes (`.gitattributes`)](#file-attributes-gitattributes)
   - [License](#license)
 
 ## Project Overview
@@ -86,10 +87,13 @@ Follow these instructions to set up and run the project locally.
     ```
 
 ### Setup
+
+Follow these steps to get your local development environment configured for the project.
+
 1.  **Create and activate a virtual environment:**
-    It's highly recommended to use a virtual environment to manage project dependencies.
+    It's highly recommended to use a virtual environment to manage project dependencies and isolate your project from other Python installations.
     ```bash
-    # Create a virtual environment (e.g., named 'venv')
+    # Create a virtual environment (e.g., named 'venv') in your project root
     python3 -m venv venv
     
     # Activate it
@@ -100,13 +104,49 @@ Follow these instructions to set up and run the project locally.
     # On Windows (Command Prompt):
     # venv\Scripts\activate.bat
     ```
-    You should see `(venv)` at the beginning of your terminal prompt.
+    After activation, you should see `(venv)` (or your chosen environment name) at the beginning of your terminal prompt.
 
 2.  **Install dependencies:**
-    Install all required Python packages from `requirements.txt`:
+    Once your virtual environment is active, install all required Python packages listed in `requirements.txt`:
     ```bash
+    # Ensure you are in the project root directory where requirements.txt is located
     pip install -r requirements.txt
     ```
+
+3.  **Set up Environment Variables (`.env`):**
+    This project uses a `.env` file to manage environment-specific configurations and sensitive information, such as database credentials or API keys. This practice ensures that secrets are not hardcoded into the source code and are not committed to the version control system.
+
+    * **Key Files involved:**
+        * **`.env` (Local and Ignored):**
+            * This file should be created by you in the root directory of the project.
+            * It will contain the actual secret values for your **local development environment**.
+            * **IMPORTANT:** The `.env` file is listed in `.gitignore` and **MUST NEVER be committed** to the GitHub repository.
+        * **`.env.example` (Version Controlled Template):**
+            * This file **IS committed** to the repository and serves as a template.
+            * It shows all the necessary environment variables that the project requires, typically with placeholder or empty values.
+
+    * **Setup Instructions for your local `.env` file:**
+        1.  **Locate `.env.example`**: In the project root, you'll find the file named `.env.example`.
+        2.  **Create your local `.env` file**: Make a copy of `.env.example` and name it `.env`. You can do this in your terminal from the project root:
+            ```bash
+            cp .env.example .env
+            ```
+        3.  **Edit `.env`**: Open your newly created `.env` file with a text editor. Replace the placeholder values with your actual local credentials and any other required configuration values. For example:
+            ```env
+            # Example content for .env (replace with your actual values)
+            DB_HOST="your_local_db_host"
+            DB_PORT="3306"
+            DB_NAME="your_local_db_name"
+            DB_USER="your_local_db_user"
+            DB_PASSWORD="your_secret_password"
+            # ANY_OTHER_API_KEY="your_api_key_value"
+            ```
+
+    * **Usage in the Project:**
+        * The Python scripts in this project (including the Streamlit app and scrapers, if they need such configurations) use the `python-dotenv` library to load the variables from your local `.env` file into the script's runtime environment.
+        * Make sure `python-dotenv` is listed in your `requirements.txt` file (it should have been installed in step 2).
+
+    This local `.env` setup allows each collaborator to maintain their own secrets without exposing them in the shared codebase. For production or deployed environments, similar environment variables would typically be configured directly on the server or cloud platform.
 
 ## Usage
 
@@ -146,6 +186,18 @@ To start the Streamlit web application:
 # Ensure your virtual environment is active
 streamlit run app/main.py
 ```
+
+## File Attributes (`.gitattributes`)
+
+This project includes a `.gitattributes` file to manage how Git handles line endings and identifies file types. This helps ensure consistency across different operating systems and development environments.
+
+Key configurations include:
+
+* **Default Normalization:** All files are automatically assessed, and text files are normalized to use LF (Unix-style) line endings in the repository.
+* **Specific Text Files:** Files like `*.py`, `*.md`, `*.json`, `*.txt`, etc., are explicitly treated as text and normalized to LF.
+* **Binary Files:** Files like `*.png`, `*.jpg`, `*.pkl`, etc., are explicitly treated as binary to prevent corruption by line-ending conversions or improper diffing.
+
+Collaborators generally do not need to take any specific action regarding this file; Git will use its rules automatically when you commit and check out files. This setup promotes a cleaner version history and easier collaboration.
 
 ## License
 

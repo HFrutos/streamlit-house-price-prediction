@@ -7,11 +7,18 @@
 *.sh text eol=lf
 *.yml text eol=lf
 *.txt text eol=lf
-*-json text eol=lf
+*.json text eol=lf
+*.html text eol=lf
+*.css text eol=lf
+*.js text eol=lf
 
 # Binary files
 *.png binary
 *.jpg binary
+*.jpeg binary
+*.gif binary
 *.pdf binary
 *.pkl binary
 *.h5 binary
+*.zip binary
+*.gz binary

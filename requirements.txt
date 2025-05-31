@@ -1,7 +1,10 @@
 # Web Scraping
-requests>=2.32.0  # Minimum secure version
-beautifulsoup4>=4.12.3  # Latest stable with bug fixes
+requests>=2.32.0          # For making HTTP requests
+beautifulsoup4>=4.12.3    # For parsing HTML/XML
 
 # Data Handling
-pandas>=2.1.0,<2.3.0  # Avoids future 2.3.x breaking changes
-numpy>=1.26.0  # Matches pandas' compatibility
+pandas>=2.1.0,<2.3.0      # For data manipulation and analysis
+numpy>=1.26.0             # For numerical operations, often with pandas
+
+# Environment & Configuration Management
+python-dotenv>=1.0.0      # For loading environment variables from .env files
