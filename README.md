@@ -50,8 +50,8 @@ streamlit-house-price-prediction/
 │       ├── data_loader.py     # Load datasets
 │       └── model_loader.py    # Load ML model
 │── scrapers/                  # Scripts for web scraping property data
-│   ├── scrape_pisos_rental.py # Script to scrape listings and details for SALE properties from pisos.com
-│   └── scrape_pisos_sale.py   # Script to scrape listings and details for RENTAL properties from pisos.com
+│   ├── scrape_pisos_rental.py # Script to scrape listings and details for RENTAL properties from pisos.com
+│   └── scrape_pisos_sale.py   # Script to scrape listings and details for SALE properties from pisos.com
 ├── model/                     # Machine learning model-related files
 │   ├── trained_model.pkl      # Serialized (saved) trained machine learning model
 │   └── model_training.py      # Python script for training/retraining the ML model
