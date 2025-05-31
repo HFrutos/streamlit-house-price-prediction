@@ -17,6 +17,7 @@ A Streamlit web application that provides predictions for property sale and rent
     - [2. Model Training (planned)](#2-model-training-planned)
     - [3. Running the Streamlit Application (planned)](#3-running-the-streamlit-application-planned)
 - [Ensure your virtual environment is active](#ensure-your-virtual-environment-is-active)
+  - [License](#license)
 
 ## Project Overview
 This project aims to build an end-to-end application for predicting house prices and rental rates in Madrid. It involves scraping data from pisos.com, processing the data, training machine learning models, and deploying an interactive frontend using Streamlit for users to get predictions and explore property data.
@@ -145,3 +146,7 @@ To start the Streamlit web application:
 ```bash
 # Ensure your virtual environment is active
 streamlit run app/main.py
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
