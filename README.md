@@ -62,8 +62,11 @@ streamlit-house-price-prediction/
 │   ├── EDA.ipynb              # Exploratory analysis
 │   └── model_training.ipynb   # Model experiments
 ├── tests/                     # Automated tests for the project (e.g., unit, integration tests)
-├── requirements.txt           # Dependencies
+├── .env.example               # Template for environment variables (secrets should be in a local .env file)
+├── .gitattributes             # Defines attributes for paths/files (e.g., line endings) for Git
 ├── .gitignore                 # Specifies intentionally untracked files that Git should ignore
+├── LICENSE.md                 # Project license information (e.g., MIT License)
+├── requirements.txt           # Dependencies
 └── README.md                  # This file: project overview, setup, and usage instructions
 ```
 
