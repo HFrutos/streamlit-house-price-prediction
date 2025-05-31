@@ -52,15 +52,15 @@ streamlit-house-price-prediction/
 │── scrapers/                  # Scripts for web scraping property data
 │   ├── scrape_pisos_rental.py # Script to scrape listings and details for RENTAL properties from pisos.com
 │   └── scrape_pisos_sale.py   # Script to scrape listings and details for SALE properties from pisos.com
-├── model/                     # Machine learning model-related files
-│   ├── trained_model.pkl      # Serialized (saved) trained machine learning model
-│   └── model_training.py      # Python script for training/retraining the ML model
 ├── data/                      # Datasets (only local, included in .gitignore)
 │   ├── raw/                   # Original data (immutable)
 │   └── processed/             # Cleaned/transformed data
 ├── notebooks/                 # Jupyter notebooks for experimentation and analysis
 │   ├── EDA.ipynb              # Exploratory analysis
 │   └── model_training.ipynb   # Model experiments
+├── model/                     # Machine learning model-related files
+│   ├── trained_model.pkl      # Serialized (saved) trained machine learning model
+│   └── model_training.py      # Python script for training/retraining the ML model
 ├── tests/                     # Automated tests for the project (e.g., unit, integration tests)
 ├── .env.example               # Template for environment variables (secrets should be in a local .env file)
 ├── .gitattributes             # Defines attributes for paths/files (e.g., line endings) for Git
