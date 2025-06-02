@@ -55,6 +55,10 @@ streamlit-house-price-prediction/
 ├── data/                      # Datasets (only local, included in .gitignore)
 │   ├── raw/                   # Original data (immutable)
 │   └── processed/             # Cleaned/transformed data
+├── sql/
+│   ├── 01_schema.sql
+│   ├── 02_staging.sql
+│   └── 03_etl.sql
 ├── notebooks/                 # Jupyter notebooks for experimentation and analysis
 │   ├── EDA.ipynb              # Exploratory analysis
 │   └── model_training.ipynb   # Model experiments
