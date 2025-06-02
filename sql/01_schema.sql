@@ -1,8 +1,24 @@
-CREATE DATABASE IF NOT EXISTS realestate;
+-- ============================================================================
+-- 01_schema.sql
+-- ============================================================================
+-- Propósito:
+--   Definir la base de datos MySQL “realestate” con el esquema normalizado
+--   preparado para almacenar inmuebles de venta y alquiler extraídos de pisos.com,
+--   junto con su histórico de precios/rentas, certificados energéticos y extras.
+--
+--   Este archivo incluye comentarios que justifican cada decisión de diseño
+--   y explica cómo encaja con el proceso de carga de datos que se hará
+--   posteriormente desde Python usando mysql.connector.
+--
 
+-- Creacion y seleccion de base de datos
+CREATE DATABASE IF NOT EXISTS realestate;
 USE realestate;
 
 -- 1. Ubicación
+--    • Almacena cada punto geográfico (latitud/longitud) UNA sola vez.
+--    • Racionalización 3FN: evita repetir coordenadas en cada propiedad.
+--    • Se crea índice UNIQUE en (latitude, longitude) para upserts rápidos.
 CREATE TABLE location (
   location_id     INT AUTO_INCREMENT PRIMARY KEY,
   barrio          VARCHAR(120),
@@ -14,6 +30,11 @@ CREATE TABLE location (
 
 
 -- 2. Vivienda física
+
+--    • Representa la vivienda “física” con atributos casi inmutables.
+--    • FK a location: cada propiedad está en una sola ubicación.
+--    • property_native_id: clave natural que trae pisos.com (ej. 51740663097.108900).
+--    • ON DUPLICATE KEY UPDATE usado en ETL para actualizar atributos si cambian.
 CREATE TABLE property (
   property_id     INT AUTO_INCREMENT PRIMARY KEY,
   location_id     INT NOT NULL,
@@ -38,6 +59,10 @@ CREATE TABLE property (
 
 
 -- 3. Anuncio
+--    • Cada fila representa un anuncio concreto de una propiedad en pisos.com.
+--    • listing_type indica si es ‘sale’ o ‘rental’.
+--    • portal por defecto 'pisos.com' (valor fijo hoy, preparada para multi‐portal).
+--    • URL única: UNIQUE(url) permite upsert por URL.
 CREATE TABLE listing (
   listing_id     INT AUTO_INCREMENT PRIMARY KEY,
   property_id    INT NOT NULL,
@@ -54,6 +79,10 @@ CREATE TABLE listing (
 
 
 -- 4. Histórico económico
+--    • Hecho rápido: registra cada cambio de precio o renta en el tiempo.
+--    • PK compuesta (listing_id, captured_at) evita duplicar el mismo snapshot.
+--    • price_kind discrimina venta (‘sale_price’) vs. renta (‘rent_month’).
+--    • price_unit siempre 'EUR' después de convertir €/m² → € totales en ETL.
 CREATE TABLE economic_history (
   listing_id     INT NOT NULL,
   captured_at    DATETIME(3) NOT NULL,
@@ -68,6 +97,9 @@ CREATE TABLE economic_history (
 
 
 -- 5. Condiciones de alquiler 
+
+--    • Detalles específicos de los anuncios de alquiler.
+--    • Evita llenar listing de columnas nulas en venta.
 CREATE TABLE rental_term (
   listing_id           INT PRIMARY KEY,
   furnished            BOOLEAN,
@@ -83,6 +115,8 @@ CREATE TABLE rental_term (
 
 
 -- 6. Certificado energético 
+
+--    • Etiqueta energética de la vivienda (1-1 con property).
 CREATE TABLE energy_certificate (
   property_id INT PRIMARY KEY,
   classification   VARCHAR(40),
@@ -96,6 +130,8 @@ CREATE TABLE energy_certificate (
 
 
 -- 7. Catálogo de extras 
+-- • feature_catalog: catálogo de posibles extras (piscina, chimenea…).
+-- • property_feature: tabla puente N-M que asigna valores a cada extra.
 CREATE TABLE feature_catalog (
   feature_id   INT AUTO_INCREMENT PRIMARY KEY,
   nombre       VARCHAR(100) UNIQUE
@@ -112,6 +148,8 @@ CREATE TABLE property_feature (
 
 
 -- 8. HTML crudo 
+-- • Página HTML completa de cada anuncio (1-1 con listing).
+-- • Útil para auditoría y reprocesos de scraping.
 CREATE TABLE raw_html (
   listing_id  INT PRIMARY KEY,
   scraped_at  DATETIME(3),
