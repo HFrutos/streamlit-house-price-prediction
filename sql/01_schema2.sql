@@ -1,68 +1,110 @@
-DROP DATABASE realestate;
-CREATE DATABASE IF NOT EXISTS realestate;
+DROP DATABASE pisos;
+CREATE DATABASE IF NOT EXISTS pisos;
+USE pisos;
 
-USE realestate;
+-- Limpieza de las tablas
+DROP TABLE IF EXISTS property_feature;
+DROP TABLE IF EXISTS feature_catalog;
+DROP TABLE IF EXISTS energy_certificate;
+DROP TABLE IF EXISTS rental_term;
+DROP TABLE IF EXISTS listing;
+DROP TABLE IF EXISTS property;
+DROP TABLE IF EXISTS age_range;
+DROP TABLE IF EXISTS location;
+
 
 /* 1. Ubicación */
 DROP TABLE IF EXISTS location;
 CREATE TABLE location (
   location_id     INT AUTO_INCREMENT PRIMARY KEY,
   barrio          VARCHAR(120),
-  distrito        VARCHAR(120),
-  latitude        DECIMAL(10,7),
-  longitude       DECIMAL(10,7),
-  INDEX idx_lat_lon (latitude, longitude) 
+  distrito        VARCHAR(120)
 );
 
---  UNIQUE (latitude, longitude) puede romperse si hay más de una vivienda 
--- en el mismo edificio (misma lat/lon).
--- ALTER TABLE location DROP INDEX ux_lat_lon,
-                     -- ADD INDEX idx_lat_lon (latitude, longitude);
 
-/* 2. Vivienda física */
--- guardo aqui las variables opcionales, pero 
--- tengo que revisar para guardar aquellas que tengan 
--- muchos nulos o ceros en la tabla catalogo de extras 
+SELECT * FROM location;
+
+-- 2. Rangos de antigüedad
+CREATE TABLE age_range (
+  age_range_id  INT AUTO_INCREMENT PRIMARY KEY,
+  label         VARCHAR(60) NOT NULL UNIQUE
+);
+
+-- insertar en el notebook para tener 
+-- toda esta parte alli 
+INSERT INTO age_range(label) VALUES
+  ('Más de 50 años'),
+  ('Entre 20 y 30 años'),
+  ('Entre 30 y 50 años'),
+  ('Entre 5 y 10 años'),
+  ('Menos de 5 años'),
+  ('Entre 10 y 20 años');
+
+/* 3. Vivienda física */
+
 DROP TABLE IF EXISTS property;
 CREATE TABLE property (
   property_id     INT AUTO_INCREMENT PRIMARY KEY,
   location_id     INT NOT NULL,
-  property_native_id VARCHAR(40) NULL, -- rental tiene referencia, sale no
+  
+  latitude             DECIMAL(10,7),
+  longitude            DECIMAL(10,7),
+  INDEX idx_prop_lat_lon (latitude, longitude),
+  
+  property_native_id VARCHAR(40) UNIQUE, -- rental tiene referencia, sale no
   superficie_construida DECIMAL(8,2),
   superficie_util      DECIMAL(8,2),
   habitaciones         TINYINT,
   banos                TINYINT,
   planta               SMALLINT,
-  antiguedad_raw       VARCHAR(60),
   estado_conservacion  VARCHAR(60),
+  age_range_id          INT,
+
+  -- lista de atributos booleanos que pasar a Feature 
+--  ascensor              BOOLEAN,
+--  balcon                BOOLEAN,
+--  calefaccion           BOOLEAN,
+--  chimenea              BOOLEAN,
+--  exterior              BOOLEAN,
+--  garaje                BOOLEAN,
+--  piscina               BOOLEAN,
+--  trastero              BOOLEAN,
+--  jardin                BOOLEAN,
+--  adaptado_pmreducida   BOOLEAN,
+--  aire_acondicionado    BOOLEAN,
+  amueblado             ENUM('no','semi','si'), -- mirar que hacer con esta, quiza hacer otra tabla
+--  puerta_blindada       BOOLEAN,
+--  vidrios_dobles        BOOLEAN,
+  cocina_equipada       VARCHAR(200), -- la dejamos aqui de momento porque no parece booleano
+--  sistema_seguridad     BOOLEAN,
+--  terraza               BOOLEAN,
   
-  -- lista de atributos booleanos que revisar 
-  ascensor              BOOLEAN,
-  balcon                BOOLEAN,
-  calefaccion           BOOLEAN,
-  chimenea              BOOLEAN,
-  exterior              BOOLEAN,
-  garaje                BOOLEAN,
-  piscina               BOOLEAN,
-  trastero              BOOLEAN,
-  jardin                BOOLEAN,
-  adaptado_pmreducida   BOOLEAN,
-  aire_acondicionado    BOOLEAN,
-  amueblado             ENUM('no','semi','si'),
-  puerta_blindada       BOOLEAN,
-  vidrios_dobles        BOOLEAN,
-  cocina_equipada       VARCHAR(200),
-  sistema_seguridad     BOOLEAN,
-  terraza               BOOLEAN,
-  
-  UNIQUE KEY ux_native_id (property_native_id),
   CONSTRAINT fk_property_location
       FOREIGN KEY (location_id) REFERENCES location(location_id)
-        ON DELETE CASCADE
+        ON DELETE CASCADE,
+    CONSTRAINT fk_property_age 
+	  FOREIGN KEY(age_range_id) REFERENCES age_range(age_range_id)
 );
 
 
-/* 3. Anuncio */
+-- a) Añade columna nueva con la longitud deseada
+ALTER TABLE property
+  ADD COLUMN property_native_id_tmp VARCHAR(100) NULL;
+
+-- b) Copia los datos (truncando si hiciera falta)
+UPDATE property
+SET  property_native_id_tmp = LEFT(property_native_id,100);
+
+-- c) Suelta el índice antiguo y la columna vieja
+ALTER TABLE property
+  DROP INDEX ux_native_id,
+  DROP COLUMN property_native_id;
+
+-- d) Renombra la columna tmp y vuelve a crear el índice
+ALTER TABLE property
+  CHANGE COLUMN property_native_id_tmp property_native_id VARCHAR(100) UNIQUE;
+
+/* 4. Anuncio */
 DROP TABLE IF EXISTS listing;
 CREATE TABLE listing (
   listing_id     INT AUTO_INCREMENT PRIMARY KEY,
@@ -84,19 +126,21 @@ CREATE TABLE listing (
 );
 
 
-/* 4. Histórico económico */
-DROP TABLE IF EXISTS economic_history;
-CREATE TABLE economic_history (
-  listing_id     INT NOT NULL,
-  captured_at    DATETIME(3) NOT NULL,
-  price_value    DECIMAL(15,2),
-  price_kind     ENUM('sale_price','rent_month') NOT NULL,
-  price_unit     ENUM('EUR') NOT NULL,
-  PRIMARY KEY (listing_id, captured_at),
-  CONSTRAINT fk_econ_listing
-      FOREIGN KEY (listing_id) REFERENCES listing(listing_id)
-        ON DELETE CASCADE
-);
+/* 4. Histórico económico */ 
+-- si el precio y la fecha de revision lo guardo en listing, esta tabla no tiene sentido
+-- tendría sentido si consultamos varios portales
+-- DROP TABLE IF EXISTS economic_history; 
+-- CREATE TABLE economic_history (
+--  listing_id     INT NOT NULL,
+--  captured_at    DATETIME(3) NOT NULL,
+--  price_value    DECIMAL(15,2),
+--  price_kind     ENUM('sale_price','rent_month') NOT NULL,
+--  price_unit     ENUM('EUR') NOT NULL,
+--  PRIMARY KEY (listing_id, captured_at),
+--  CONSTRAINT fk_econ_listing
+--      FOREIGN KEY (listing_id) REFERENCES listing(listing_id)
+--        ON DELETE CASCADE
+-- );
 
 
 /* 5. Condiciones de alquiler */
@@ -122,9 +166,7 @@ CREATE TABLE energy_certificate (
   property_id INT PRIMARY KEY,
   classification   VARCHAR(40),
   consumo_rating   CHAR(1),
-  consumo_value    DECIMAL(8,2),
   emisiones_rating CHAR(1),
-  emisiones_value  DECIMAL(8,2),
   CONSTRAINT fk_cert_property
       FOREIGN KEY (property_id) REFERENCES property(property_id)
 		ON DELETE CASCADE
@@ -135,7 +177,7 @@ CREATE TABLE energy_certificate (
 DROP TABLE IF EXISTS feature_catalog;
 CREATE TABLE feature_catalog (
   feature_id   INT AUTO_INCREMENT PRIMARY KEY,
-  nombre       VARCHAR(100) UNIQUE
+  nombre       VARCHAR(100) NOT NULL UNIQUE
 );
 
 DROP TABLE IF EXISTS property_feature;
@@ -148,4 +190,20 @@ CREATE TABLE property_feature (
   CONSTRAINT fk_pf_feature   FOREIGN KEY (feature_id)   REFERENCES feature_catalog(feature_id) 
 );
 
-
+-- insertar en el notebook
+INSERT INTO feature_catalog(nombre) VALUES
+  ('ascensor'),
+  ('balcon'),
+  ('calefaccion'),
+  ('chimenea'),
+  ('exterior'),
+  ('garaje'),
+  ('piscina'),
+  ('trastero'),
+  ('jardin'),
+  ('adaptado_pmreducida'),
+  ('aire_acondicionado'),
+  ('puerta_blindada'),
+  ('vidrios_dobles'),
+  ('sistema_seguridad'),
+  ('terraza');
