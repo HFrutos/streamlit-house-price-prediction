@@ -1,6 +1,6 @@
-DROP DATABASE pisos;
-CREATE DATABASE IF NOT EXISTS pisos;
-USE pisos;
+DROP DATABASE pisos2;
+CREATE DATABASE IF NOT EXISTS pisos2;
+USE pisos2;
 
 -- Limpieza de las tablas
 DROP TABLE IF EXISTS property_feature;
@@ -12,6 +12,11 @@ DROP TABLE IF EXISTS property;
 DROP TABLE IF EXISTS age_range;
 DROP TABLE IF EXISTS location;
 
+SELECT * FROM age_range;
+SELECT * FROM feature_catalog;
+SELECT * FROM location;
+SELECT * FROM property;
+SELECT * FROM listing;
 
 /* 1. Ubicación */
 DROP TABLE IF EXISTS location;
@@ -51,7 +56,7 @@ CREATE TABLE property (
   longitude            DECIMAL(10,7),
   INDEX idx_prop_lat_lon (latitude, longitude),
   
-  property_native_id VARCHAR(40) UNIQUE, -- rental tiene referencia, sale no
+  property_native_id VARCHAR(60) UNIQUE, -- rental tiene referencia, sale no
   superficie_construida DECIMAL(8,2),
   superficie_util      DECIMAL(8,2),
   habitaciones         TINYINT,
@@ -87,23 +92,6 @@ CREATE TABLE property (
 );
 
 
--- a) Añade columna nueva con la longitud deseada
-ALTER TABLE property
-  ADD COLUMN property_native_id_tmp VARCHAR(100) NULL;
-
--- b) Copia los datos (truncando si hiciera falta)
-UPDATE property
-SET  property_native_id_tmp = LEFT(property_native_id,100);
-
--- c) Suelta el índice antiguo y la columna vieja
-ALTER TABLE property
-  DROP INDEX ux_native_id,
-  DROP COLUMN property_native_id;
-
--- d) Renombra la columna tmp y vuelve a crear el índice
-ALTER TABLE property
-  CHANGE COLUMN property_native_id_tmp property_native_id VARCHAR(100) UNIQUE;
-
 /* 4. Anuncio */
 DROP TABLE IF EXISTS listing;
 CREATE TABLE listing (
@@ -124,6 +112,10 @@ CREATE TABLE listing (
         FOREIGN KEY (property_id) REFERENCES property(property_id)
         ON DELETE CASCADE
 );
+
+ALTER TABLE listing
+  DROP COLUMN scraped_at,
+  DROP COLUMN scrape_status;
 
 
 /* 4. Histórico económico */ 
