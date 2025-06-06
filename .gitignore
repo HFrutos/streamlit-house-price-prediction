@@ -8,9 +8,9 @@ __pycache__/
 .ipynb_checkpoints/
 
 # ==================== Data ====================
-data/geodata/
 data/raw/
 data/processed/
+data/geodata/
 *.csv
 *.parquet
 *.feather
