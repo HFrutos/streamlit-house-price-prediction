@@ -8,3 +8,7 @@ numpy>=1.26.0             # For numerical operations, often with pandas
 
 # Environment & Configuration Management
 python-dotenv>=1.0.0      # For loading environment variables from .env files
+
+# Geospatial Analysis & Interactive Visualization
+geopandas>=0.14.0         # For working with geospatial data (e.g., GeoJSON, Shapefiles)
+plotly>=5.18.0            # For interactive plotting, includes plotly.express (px)

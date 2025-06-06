@@ -14,8 +14,10 @@ A Streamlit web application that provides predictions for property sale and rent
     - [Setup](#setup)
   - [Usage](#usage)
     - [1. Data Collection (Web Scraping)](#1-data-collection-web-scraping)
-    - [2. Model Training (planned)](#2-model-training-planned)
-    - [3. Running the Streamlit Application (planned)](#3-running-the-streamlit-application-planned)
+    - [2. Data Processing and Preparation](#2-data-processing-and-preparation)
+    - [3. Generating Choropleth Maps](#3-generating-choropleth-maps)
+    - [4. Model Training (planned)](#4-model-training-planned)
+    - [5. Running the Streamlit Application](#5-running-the-streamlit-application)
   - [File Attributes (`.gitattributes`)](#file-attributes-gitattributes)
   - [License](#license)
 
@@ -40,38 +42,58 @@ This project aims to build an end-to-end application for predicting house prices
 ## Project Structure
 ```bash
 streamlit-house-price-prediction/
-├── app/                       # Streamlit frontend
-│   ├── main.py                # Core app (entry point to run the app)
+├── app/                       # Streamlit frontend application
+│   ├── main.py                # Core app (entry point: streamlit run app/main.py)
 │   ├── pages/                 # Sub-pages for the multi-page Streamlit app
 │   │   ├── predict.py         # Prediction page
 │   │   └── explore.py         # Data visualization page
-│   ├── assets/                # Static assets like images, CSS files
-│   └── utils/                 # Helper functions
+│   ├── assets/                # Static assets (images, custom CSS)
+│   └── utils/                 # Utility functions shared across the Streamlit app
 │       ├── data_loader.py     # Load datasets
 │       └── model_loader.py    # Load ML model
-│── scrapers/                  # Scripts for web scraping property data
-│   ├── scrape_pisos_rental.py # Script to scrape listings and details for RENTAL properties from pisos.com
-│   └── scrape_pisos_sale.py   # Script to scrape listings and details for SALE properties from pisos.com
+│
 ├── data/                      # Datasets (only local, included in .gitignore)
 │   ├── raw/                   # Original data (immutable)
-│   └── processed/             # Cleaned/transformed data
-├── sql/
-│   ├── 01_schema.sql
-│   ├── 02_staging.sql
-│   └── 03_etl.sql
-├── notebooks/                 # Jupyter notebooks for experimentation and analysis
+│   ├── processed/             # Cleaned/transformed/aggregated data
+│   └── geodata/               # Geospatial data
+│
+├── notebooks/                 # Jupyter notebooks for experimentation, analysis, and research
 │   ├── EDA.ipynb              # Exploratory analysis
 │   └── model_training.ipynb   # Model experiments
+│
 ├── model/                     # Machine learning model-related files
 │   ├── trained_model.pkl      # Serialized (saved) trained machine learning model
 │   └── model_training.py      # Python script for training/retraining the ML model
+│
+├── reports/                   # Generated reports, visualizations, and static outputs
+│   ├── figures/               # Static plots or charts (e.g., PNG, SVG from EDA)
+│   └── maps/                  # Generated interactive map HTML files
+│
+├── scrapers/                  # Scripts for web scraping property data
+│   ├── scrape_pisos_rental.py # Scrapes rental properties
+│   └── scrape_pisos_sale.py   # Scrapes sale properties
+│
+├── scripts/                   # Standalone utility or processing scripts
+│   ├── process_data.py        # Script for cleaning and transforming raw data
+│   ├── aggregate_data.py      # Script for creating aggregated datasets (e.g., per neighborhood)
+│   └── choropleth_maps.py     # Script for creating map HTML files
+│
+├── sql/                       # SQL scripts for database schema, staging, ETL, queries, etc.
+│   ├── 01_schema.sql
+│   ├── 02_staging.sql
+│   ├── 03_etl.sql
+│   └── README.md              # (Optional) Explanation of the SQL scripts and database setup
+│
 ├── tests/                     # Automated tests for the project (e.g., unit, integration tests)
+│   ├── unit/                  # Unit tests for individual functions/modules
+│   └── integration/           # Integration tests for combined parts of the system
+│
 ├── .env.example               # Template for environment variables (secrets should be in a local .env file)
-├── .gitattributes             # Defines attributes for paths/files (e.g., line endings) for Git
-├── .gitignore                 # Specifies intentionally untracked files that Git should ignore
-├── LICENSE.md                 # Project license information (e.g., MIT License)
+├── .gitattributes             # Defines attributes for paths/files for Git
+├── .gitignore                 # Specifies intentionally untracked files
+├── LICENSE.md                 # Project license information
 ├── requirements.txt           # Dependencies
-└── README.md                  # This file: project overview, setup, and usage instructions
+└── README.md                  # This file: Project overview, setup, and usage instructions
 ```
 
 ## Getting Started
@@ -157,6 +179,8 @@ Follow these steps to get your local development environment configured for the 
 
 ## Usage
 
+This section outlines how to use the different components of the project, from data collection to running the application. Ensure your virtual environment is active (`source venv/bin/activate`) before running any Python scripts.
+
 ### 1. Data Collection (Web Scraping)
 The scripts to collect data from pisos.com are located in the `scrapers/` directory.
 *Note: Web scraping should be done responsibly and in accordance with the website's terms of service and `robots.txt`.*
@@ -175,24 +199,51 @@ The scripts to collect data from pisos.com are located in the `scrapers/` direct
     ```
     This will generate a CSV file in `data/raw/madrid_rental_properties_raw.csv`.
 
-### 2. Model Training (planned)
-Predicts house prices/rental rates based on property features.
+### 2. Data Processing and Preparation
+Once raw data is collected, you may need to process, clean, and aggregate it. Scripts for these tasks can be found in the `scripts/` directory.
 
-Model training scripts and notebooks are available:
-* Experimentation and development: `notebooks/model_training.ipynb` (planned)
-* Script for retraining (if applicable): `model/model_training.py`(planned)
+* **Example: Process raw data (if you have `scripts/process_data.py`):**
     ```bash
-    # Example command if model_training.py is runnable
+    python scripts/process_data.py
+    ```
+    This would typically take data from `data/raw/` and output cleaned data to `data/processed/`.
+
+* **Example: Aggregate property data (if you have `scripts/aggregate_data.py`):**
+    ```bash
+    python scripts/aggregate_data.py
+    ```
+    This might create summary datasets, like property counts or average prices per neighborhood, potentially saving them to `data/processed/`.
+
+### 3. Generating Choropleth Maps
+To visualize property data (e.g., number of properties per neighborhood, average prices) on interactive choropleth maps:
+
+* **Run the map generation script:**
+    ```bash
+    python scripts/generate_choropleth_maps.py
+    ```
+    This script uses processed data and geospatial information (e.g., from `data/geodata/`) to create interactive HTML maps.
+* **Output:** The generated maps will be saved in the `reports/maps/` directory (e.g., `madrid_property_counts_map.html`, `madrid_average_price_map.html`). You can open these HTML files directly in a web browser to view the maps.
+
+### 4. Model Training (planned)
+This project aims to predict house prices and rental rates based on property features.
+
+* **Experimentation & Development:** Jupyter Notebooks for model development and initial experiments can be found in `notebooks/` (e.g., `notebooks/model_training_experiments.ipynb`).
+* **Training Script:** A more finalized script for training or retraining the model is located at `model/model_training.py`.
+    ```bash
+    # Example command to run the model training script
     python model/model_training.py
     ```
-The trained model is saved as `model/trained_model.pkl`. (planned)
+    The trained model is typically saved to a file like `model/trained_model.pkl`.
 
-### 3. Running the Streamlit Application (planned)
-To start the Streamlit web application:
-```bash
-# Ensure your virtual environment is active
-streamlit run app/main.py
-```
+### 5. Running the Streamlit Application
+The interactive web application allows users to get price predictions and explore property data visualizations.
+
+* **To start the Streamlit web application:**
+    ```bash
+    # Ensure you are in the project root directory
+    streamlit run app/main.py
+    ```
+    This will typically open the application in your default web browser. The app might use the trained model (`model/trained_model.pkl`) and processed datasets. The `explore.py` page within the app could also be a place to display the generated choropleth maps or similar visualizations dynamically.
 
 ## File Attributes (`.gitattributes`)
 
