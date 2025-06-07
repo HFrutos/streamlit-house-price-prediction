@@ -17,6 +17,8 @@ SELECT * FROM feature_catalog;
 SELECT * FROM location;
 SELECT * FROM property;
 SELECT * FROM listing;
+SELECT * FROM rental_term;
+SELECT * FROM energy_certificate;
 
 /* 1. Ubicación */
 DROP TABLE IF EXISTS location;
@@ -163,7 +165,8 @@ CREATE TABLE energy_certificate (
       FOREIGN KEY (property_id) REFERENCES property(property_id)
 		ON DELETE CASCADE
 );
-
+ALTER TABLE energy_certificate
+  DROP COLUMN classification;
 
 /* 7. Catálogo de extras */
 DROP TABLE IF EXISTS feature_catalog;
@@ -176,7 +179,7 @@ DROP TABLE IF EXISTS property_feature;
 CREATE TABLE property_feature (
   property_id  INT,
   feature_id   INT,
-  valor        VARCHAR(40),
+  valor        VARCHAR(40), -- este valor realmente hace falta?
   PRIMARY KEY (property_id, feature_id),
   CONSTRAINT fk_pf_property  FOREIGN KEY (property_id)  REFERENCES property(property_id) ON DELETE CASCADE,
   CONSTRAINT fk_pf_feature   FOREIGN KEY (feature_id)   REFERENCES feature_catalog(feature_id) 
