@@ -1,17 +1,17 @@
 # Web Scraping
-requests>=2.32.0          # For making HTTP requests
-beautifulsoup4>=4.12.3    # For parsing HTML/XML
+requests>=2.32.0            # For making HTTP requests
+beautifulsoup4>=4.12.3      # For parsing HTML/XML
 
 # Data Handling
-pandas>=2.1.0,<2.3.0      # For data manipulation and analysis
-numpy>=1.26.0             # For numerical operations, often with pandas
+pandas>=2.1.0,<2.3.0        # For data manipulation and analysis
+numpy>=1.26.0               # For numerical operations, often with pandas
 
 # Environment & Configuration Management
-python-dotenv>=1.0.0      # For loading environment variables from .env files
+python-dotenv>=1.0.0        # For loading environment variables from .env files
 
 # Geospatial Analysis & Interactive Visualization
-geopandas>=0.14.0         # For working with geospatial data (e.g., GeoJSON, Shapefiles)
-plotly>=5.18.0            # For interactive plotting, includes plotly.express (px)
+geopandas>=0.14.0           # For working with geospatial data (e.g., GeoJSON, Shapefiles)
+plotly>=5.18.0              # For interactive plotting, includes plotly.express (px)
 
 # Machine Learning
-scikit-learn>=1.4.0,<2.0.0  # Covers RandomForestRegressor, MinMaxScaler
+scikit-learn>=1.4.0,<2.0.0  # Avoids potential breaking changes when scikit-learn 2.0 releases
