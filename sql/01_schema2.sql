@@ -12,9 +12,9 @@
 --
 
 -- Creacion y seleccion de base de datos
-DROP DATABASE pisos2;
-CREATE DATABASE IF NOT EXISTS pisos2;
-USE pisos2;
+DROP DATABASE pisos3;
+CREATE DATABASE IF NOT EXISTS pisos3;
+USE pisos3;
 
 -- Limpieza de las tablas (orden inverso de dependencias)
 DROP TABLE IF EXISTS property_feature;
@@ -57,13 +57,27 @@ CREATE TABLE age_range (
   label         VARCHAR(60) NOT NULL UNIQUE
 );
 
+-- 2.1 Categorias conservacion
+-- Catálogo de categorias del estado de conservacion de un inmueble 
+-- 
+CREATE TABLE conservation (
+    state_id INT AUTO_INCREMENT PRIMARY KEY,
+    state VARCHAR(20)
+);
+
+-- 2.2 Categorias del estado del certificado de clasificacion energetico
+-- 
+CREATE TABLE energy_classification (
+	cert_id INT AUTO_INCREMENT PRIMARY KEY,
+    state VARCHAR(25)
+);
 
 -- 3. Vivienda física 
 -- Almacena las características invariables de cada inmueble.
 -- Latitud/longitud para búsquedas geoespaciales, FK a ubicación, FK a antigüedad.
 -- Atributos booleanos/enum pasan luego a property_feature para evitar muchos NULL.
 --
-DROP TABLE IF EXISTS property;
+DROP TABLE property;
 CREATE TABLE property (
   property_id     INT AUTO_INCREMENT PRIMARY KEY,
   location_id     INT NOT NULL,
@@ -72,14 +86,14 @@ CREATE TABLE property (
   longitude            DECIMAL(10,7),
   INDEX idx_prop_lat_lon (latitude, longitude),
   
-  property_native_id VARCHAR(60) UNIQUE, -- rental tiene referencia, sale no
+  property_native_id VARCHAR(60) UNIQUE, -- este deberia ser el identificador 
   superficie_construida DECIMAL(8,2), -- m^2
   superficie_util      DECIMAL(8,2), -- m^2
   habitaciones         TINYINT,
   banos                TINYINT,
   planta               SMALLINT,
-  estado_conservacion  VARCHAR(60),
-  age_range_id          INT,
+  estado_conservacion  VARCHAR(60), --
+  age_range_id         INT,
 
   -- lista de atributos booleanos que pasar a Feature 
 --  ascensor              BOOLEAN,
@@ -93,10 +107,10 @@ CREATE TABLE property (
 --  jardin                BOOLEAN,
 --  adaptado_pmreducida   BOOLEAN,
 --  aire_acondicionado    BOOLEAN,
-  amueblado             ENUM('no','semi','si'), -- mirar que hacer con esta, quiza hacer otra tabla
+--  amueblado             ENUM('no','semi','si'), -- mirar que hacer con esta, quiza hacer otra tabla
 --  puerta_blindada       BOOLEAN,
 --  vidrios_dobles        BOOLEAN,
-  cocina_equipada       VARCHAR(200), -- la dejamos aqui de momento porque no parece booleano
+--  cocina_equipada       VARCHAR(200), -- la dejamos aqui de momento porque no parece booleano
 --  sistema_seguridad     BOOLEAN,
 --  terraza               BOOLEAN,
   
@@ -112,20 +126,23 @@ CREATE TABLE property (
 -- Cada anuncio vinculado a una propiedad; guarda tipo (sale/rental) y precio.
 -- Las columnas de scrapeo se han eliminado porque no se dispone de ese dato.
 -- 
-DROP TABLE IF EXISTS listing;
+DROP TABLE listing;
 CREATE TABLE listing (
   listing_id     INT AUTO_INCREMENT PRIMARY KEY,
   property_id    INT NOT NULL,
 --  portal         VARCHAR(30)  DEFAULT 'pisos.com', -- SE PUEDE BORRAR SI TODOS SON DEL MISMO PORTAL
+  url 			 varchar(120),
   listing_type   ENUM('sale','rental') NOT NULL, -- tipo de anuncio, necesario?
   
   price_kind     ENUM('sale_price','rent_month') NOT NULL,
-  price_current  DECIMAL(14,2)                   NOT NULL, -- precio que aparece en el anuncio, ya sea de alquiler o venta 
+  price_eur      DECIMAL(14,2)                   NOT NULL, -- precio que aparece en el anuncio, ya sea de alquiler o venta 
 
   scraped_at     DATETIME(3),
   scrape_status  VARCHAR(40),
 
-  INDEX idx_list_type_price (listing_type, price_current),
+  description TEXT,
+  
+  INDEX idx_list_type_price (listing_type, price_eur),
   CONSTRAINT fk_listing_property
         FOREIGN KEY (property_id) REFERENCES property(property_id)
         ON DELETE CASCADE
@@ -133,9 +150,9 @@ CREATE TABLE listing (
 
 -- se han borrado estas columnas porque no se disponía de 
 -- esta informacion, seguramente se añadan
-ALTER TABLE listing
-  DROP COLUMN scraped_at,
-  DROP COLUMN scrape_status;
+-- ALTER TABLE listing
+--  DROP COLUMN scraped_at,
+--  DROP COLUMN scrape_status;
 
 
 /* 4. Histórico económico */ 
@@ -172,7 +189,7 @@ ALTER TABLE listing
 --  CONSTRAINT fk_rental_listing
 --      FOREIGN KEY (listing_id) REFERENCES listing(listing_id)
 --        ON DELETE CASCADE
---);
+-- );
 
 
 -- 6. Certificado energético
@@ -183,13 +200,15 @@ CREATE TABLE energy_certificate (
   classification   VARCHAR(40),
   consumo_rating   CHAR(1),
   emisiones_rating CHAR(1),
+  emision_value DECIMAL(9,3),
+  consumption_value DECIMAL(9,3),
   CONSTRAINT fk_cert_property
       FOREIGN KEY (property_id) REFERENCES property(property_id)
 		ON DELETE CASCADE
 );
 -- no disponemos de valor, puede que si sea añadido 
-ALTER TABLE energy_certificate
-  DROP COLUMN classification;
+-- ALTER TABLE energy_certificate
+--  DROP COLUMN classification;
 
 
 -- 7. Catálogo de extras (Features)
@@ -200,7 +219,7 @@ CREATE TABLE feature_catalog (
   nombre       VARCHAR(100) NOT NULL UNIQUE
 );
 
-DROP TABLE IF EXISTS property_feature;
+
 CREATE TABLE property_feature (
   property_id  INT,
   feature_id   INT,
