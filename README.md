@@ -74,7 +74,7 @@ streamlit-house-price-prediction/
 │   └── scrape_pisos_sale.py   # Scrapes sale properties
 │
 ├── scripts/                   # Standalone utility or processing scripts
-│   ├── choropleth_maps.py    # Script for creating map HTML files
+│   ├── choropleth_maps.py     # Script for creating map HTML files
 │   └── process_sale_data.py   # Script for cleaning and transforming raw sale data
 │
 ├── sql/                       # SQL scripts for database schema, staging, ETL, queries, etc.
