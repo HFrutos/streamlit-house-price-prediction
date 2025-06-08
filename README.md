@@ -199,19 +199,13 @@ The scripts to collect data from pisos.com are located in the `scrapers/` direct
     This will generate a CSV file in `data/raw/madrid_rental_properties_raw.csv`.
 
 ### 2. Data Processing and Preparation
-Once raw data is collected, you may need to process, clean, and aggregate it. Scripts for these tasks can be found in the `scripts/` directory.
+Once raw data is collected, you may need to process and clean it. Scripts for these tasks can be found in the `scripts/` directory.
 
-* **Example: Process raw data (if you have `scripts/process_data.py`):**
+* **Example: Process raw sale data (if you have `scripts/process_sale_data.py`):**
     ```bash
-    python scripts/process_data.py
+    python scripts/process_sale_data.py
     ```
     This would typically take data from `data/raw/` and output cleaned data to `data/processed/`.
-
-* **Example: Aggregate property data (if you have `scripts/aggregate_data.py`):**
-    ```bash
-    python scripts/aggregate_data.py
-    ```
-    This might create summary datasets, like property counts or average prices per neighborhood, potentially saving them to `data/processed/`.
 
 ### 3. Generating Choropleth Maps
 To visualize property data (e.g., number of properties per neighborhood, average prices) on interactive choropleth maps:
