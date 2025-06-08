@@ -89,7 +89,6 @@ if df_sale is not None:
     # Note: Accents are removed for simplicity (e.g., Baños -> banos).
     rename_mapping = {
         'property_native_id': 'property_id',
-        'price_eur': 'price', 
         'scraped_timestamp': 'scraped_at',
         'energy_certificate_main_classification': 'energy_cert_classification',
         'Adaptado a personas con movilidad reducida': 'adaptado_movilidad_reducida',
@@ -128,10 +127,10 @@ if df_sale is not None:
     # 'energy_cert_classification', 'energy_consumption_rating', 'energy_emissions_rating',
     # 'antiguedad', 'banos', 'conservacion', 'habitaciones']
 
-    # --- Handle Target Variable 'price' ---
+    # --- Handle Target Variable 'price_eur' ---
     # The target variable for our model is 'price'. Any rows where this value
     # is missing are not useful for training a supervised model, so they are dropped.
-    df_sale.dropna(subset=['price'], inplace=True)
+    df_sale.dropna(subset=['price_eur'], inplace=True)
 
     # --- Convert Latitude and Longitude to Float ---
     # Coordinates are parsed as objects with commas as decimal separators.
