@@ -201,16 +201,65 @@ if df_sale is not None:
     df_sale.drop(columns=['gastos_comunidad'], inplace=True, errors='ignore')
 
     # --- Parse 'orientacion' (Orientation) ---
-    # This is a multi-value categorical field. We will create separate boolean columns
-    # for each of the four primary orientations (Norte, Sur, Este, Oeste).
-    # A property can have multiple orientations.
-    if 'orientacion' in df_sale.columns:
-        orientacion_str = df_sale['orientacion'].str.lower().fillna('')
-        df_sale['orientacion_norte'] = orientacion_str.str.contains('norte|n', na=False)
-        df_sale['orientacion_sur'] = orientacion_str.str.contains('sur|su', na=False)
-        df_sale['orientacion_este'] = orientacion_str.str.contains('este', na=False)
-        df_sale['orientacion_oeste'] = orientacion_str.str.contains('oeste', na=False)
-        df_sale.drop(columns=['orientacion'], inplace=True)
+# This function will parse the orientation string into a list of standard codes.
+# It handles multiple values, variations in spelling, and special cases like 'Todas'.
+def parse_orientation(value):
+    """
+    Parses a descriptive orientation string into a standardized list of codes.
+
+    Args:
+        value (str or any): The input value from the 'orientacion' column.
+
+    Returns:
+        list or np.nan: A sorted list of unique orientation codes (e.g., ['E', 'S'])
+                        or numpy.nan if the input is not a valid string.
+    """
+    # Return NaN for missing or non-string inputs
+    if pd.isna(value) or not isinstance(value, str):
+        return np.nan
+
+    val_lower = str(value).lower() # Standardize to lowercase
+
+    # Handle special case 'Todas' (All)
+    if 'todas' in val_lower:
+        return sorted(['N', 'S', 'E', 'O'])
+
+    # Define keywords and their corresponding standard codes.
+    # IMPORTANT: List longer, more specific keywords before shorter ones to ensure correct matching
+    # (e.g., 'noreste' is checked before 'norte' and 'este').
+    orientation_map = [
+        ('noreste', 'NE'),
+        ('nordeste', 'NE'),
+        ('noroeste', 'NO'),
+        ('sureste', 'SE'),
+        ('sudeste', 'SE'),
+        ('suroeste', 'SO'),
+        ('norte', 'N'),
+        ('sur', 'S'),
+        ('su', 'S'), # Handle mispellings
+        ('este', 'E'),
+        ('oeste', 'O')
+    ]
+    
+    found_orientations = set() # Use a set to automatically handle duplicates
+
+    # Iteratively find keywords, add their codes, and remove them from the string
+    for keyword, code in orientation_map:
+        if keyword in val_lower:
+            found_orientations.add(code)
+            val_lower = val_lower.replace(keyword, '') # Remove found keyword to prevent sub-matches
+
+    if not found_orientations:
+        return np.nan # Return NaN if no recognizable orientation was found
+
+    # Return a sorted list for consistency
+    return sorted(list(found_orientations))
+
+# Apply the function to the 'orientacion' column to create a new list column
+if 'orientacion' in df_sale.columns:
+    df_sale['orientacion_list'] = df_sale['orientacion'].apply(parse_orientation)
+    # Drop the original 'orientacion' column
+    df_sale.drop(columns=['orientacion'], inplace=True)
 
     # --- Parse 'planta' (Floor) ---
     # This ordinal categorical feature will be converted to a numerical scale.
@@ -220,10 +269,9 @@ if df_sale is not None:
         if pd.isna(value):
             return np.nan
         val_lower = str(value).lower()
-        if 'bajo' in val_lower: return 0
+        if any(keyword in val_lower for keyword in ['bajo', 'principal']): return 0
         if 'semisótano' in val_lower: return -1
         if 'entresuelo' in val_lower: return 0.5
-        if 'principal' in val_lower: return 1.0 # Often the 1st floor
         if 'más de 20' in val_lower: return 21.0
         
         # Use regex to find numbers in strings like "1ª", "10ª", etc.
