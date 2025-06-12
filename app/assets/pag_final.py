@@ -27,14 +27,64 @@ st.set_page_config(
 df_venta = pd.read_csv('madrid_sale_properties_cleaned.csv')
 df_alquiler = pd.read_csv('madrid_rental_properties_cleaned.csv')
 
+
+
  # Foto monete (despues hay que mover cosicas al final del selector del sidebar)
 if 'submitted' not in st.session_state:
-    col1, col2, col3 = st.columns([1,3,1])
-    with col2:
+    
+    col1, col_space, col_big = st.columns([2, 0.5, 5.5])  # Total: 8 → 2 + 0.5 + 5.5
+
+    with col1:
         st.image("orangutan.png", 
                 caption="¡Selecciona los parámetros en el sidebar de la izquierda! →", 
-                width=400)  
+                width=325)  
+
+    with col_big:
+        st.title("Predicción de Precios de Viviendas")
+        st.markdown(
+            "Bienvenido/a. Esta app permite predecir el precio de una propiedad según sus características." \
+            "\n\n" \
+            "- En el menú desplegable de la izquierda puedes filtrar por tipo de operación (venta o alquiler), metros cuadrados, número de habitaciones, barrios y antigüedad." \
+            "\n\n" \
+            "- En la pestaña donde se selcciona la sección pordás seleccionar mapa de pisos, métricas, gráficas o predictivo." \
+            "\n\n" \
+            "- En la sección de Mapa de pisos podrás ver un mapa interactivo con los inmuebles que cumplen con los filtros seleccionados." \
+            "\n\n" \
+            "- En la sección de métricas podrás ver estadísticas sobre los inmuebles seleccionados, como el número de barrios, el máximo de habitaciones, el número de pisos, el máximo de metros cuadrados y el rating energético más frecuente." \
+            "\n\n" \
+            "- En la sección de Exploratory Data Analysis podrás ver distintas gráficas para comprender el mercado moviliario actual." \
+            "\n\n" \
+            "- En la seción predictivo podrás intriducir los datoss de tu inmueble para que nuestro modelo de I.A prediga el precio óptimo de tu viviendS." \
+        )
+
+#About us 
+with st.expander("ℹ️ Acerca del grupo / About Us"):
+    st.markdown("""
+    ### 👨‍💻 Integrantes del grupo
+
+    - **Akira García** – Delegado de clase  
+      [LinkedIn](https://www.linkedin.com/in/AkiraGarcía)
+      [GitHub]( https://github.com/akiraglhola)
     
+    - **Marta Rivas** – Porque se lo merece  
+      [LinkedIn](https://www.linkedin.com/in/MartaRivas)
+      [GitHub](https://github.com/MartaRivas13)
+
+    - **Héctor Frutos** – Es buena gente  
+      [LinkedIn](https://www.linkedin.com/in/HectorFrutos)
+      [GitHub](https://github.com/HFrutos)
+
+    - **Jorge Arriaga** – Porque tiene que haber de tó  
+      [LinkedIn](https://www.linkedin.com/in/JorgeArriaga)
+      [GitHub](https://github.com/Jorge-Arriaga)
+
+    ---
+
+    Proyecto realizado como parte del curso de *Machine Learning aplicado a Datos Inmobiliarios*.
+
+    ✉️ Para más información, contacta a: pftttttt@example.com
+    """, unsafe_allow_html=True)
+
 # Sidebar
 with st.sidebar.form("filtros_formulario"):
     st.markdown("Vista y comparación de inmuebles")
@@ -62,7 +112,7 @@ with st.sidebar.form("filtros_formulario"):
         antiguedad_sel = []
 
     # Sección
-    seccion = st.selectbox('Selecciona la sección', ['Mapa de pisos', 'Métricas', 'Gráficas'])
+    seccion = st.selectbox('Selecciona la sección', ['Mapa de pisos', 'Exploratory Data Analysis', 'Gráficas'])
 
    
 
@@ -198,8 +248,8 @@ def main():
         fig = px.bar(filtro.groupby('barrio')['price_eur'].mean().sort_values().reset_index(),x='barrio', y='price_eur', title='Precio medio por barrio')
         st.plotly_chart(fig)
         
-# gráficas
-    elif seccion == 'Gráficas':
+# Exploratory Data Analysis
+    elif seccion == 'Exploratory Data Analysis':
         st.title('Visualización de datos')
 
         if filtro.empty:
