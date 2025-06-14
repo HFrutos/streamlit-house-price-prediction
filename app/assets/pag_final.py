@@ -10,6 +10,7 @@ from folium import Map
 from folium.plugins import MarkerCluster
 import requests
 
+
 # Configuración de la página
 st.set_page_config(
     page_title='house-price-prediction',
@@ -57,6 +58,17 @@ if 'submitted' not in st.session_state:
             "- En la seción predictivo podrás intriducir los datoss de tu inmueble para que nuestro modelo de I.A prediga el precio óptimo de tu viviendS." \
         )
 
+
+# database architecture 
+#st.write("🔍 Query params actuales:", st.query_params)
+with st.expander("🗄️ Arquitectura de la base de datos / Database architecture"):
+    st.write("Información de la arquitectura implementada para este proyecto, así como la importancia de cada tabla y cada columna")
+
+    st.markdown(
+    '<a href="/Arquitectura" target="_self">📄 Ver documentación completa →</a>',
+    unsafe_allow_html=True
+    ) 
+
 #About us 
 with st.expander("ℹ️ Acerca del grupo / About Us"):
     st.markdown("""
@@ -64,7 +76,7 @@ with st.expander("ℹ️ Acerca del grupo / About Us"):
 
     - **Akira García** – Aspirante a Data Scientist | Ingeniero Informático | Análisis de Datos & Machine Learning  
       [LinkedIn](https://www.linkedin.com/in/akiragarcialuis/)
-      [GitHub]( https://github.com/akiraglhola)
+      [GitHub](https://github.com/akiraglhola)
     
     - **Marta Rivas** – Porque se lo merece  
       [LinkedIn](https://www.linkedin.com/in/marta-rivas-nevado-a1a75abb/)
