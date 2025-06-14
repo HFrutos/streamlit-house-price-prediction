@@ -62,16 +62,16 @@ with st.expander("ℹ️ Acerca del grupo / About Us"):
     st.markdown("""
     ### 👨‍💻 Integrantes del grupo
 
-    - **Akira García** – Delegado de clase  
-      [LinkedIn](https://www.linkedin.com/in/AkiraGarcía)
+    - **Akira García** – Aspirante a Data Scientist | Ingeniero Informático | Análisis de Datos & Machine Learning  
+      [LinkedIn](https://www.linkedin.com/in/akiragarcialuis/)
       [GitHub]( https://github.com/akiraglhola)
     
     - **Marta Rivas** – Porque se lo merece  
-      [LinkedIn](https://www.linkedin.com/in/MartaRivas)
+      [LinkedIn](https://www.linkedin.com/in/marta-rivas-nevado-a1a75abb/)
       [GitHub](https://github.com/MartaRivas13)
 
-    - **Héctor Frutos** – Es buena gente  
-      [LinkedIn](https://www.linkedin.com/in/HectorFrutos)
+    - **Héctor de Frutos** – Es buena gente  
+      [LinkedIn](https://www.linkedin.com/in/hfrutosjimenez/)
       [GitHub](https://github.com/HFrutos)
 
     - **Jorge Arriaga** – Porque tiene que haber de tó  
