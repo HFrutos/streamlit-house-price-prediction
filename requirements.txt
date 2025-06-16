@@ -9,9 +9,13 @@ numpy>=1.26.0               # For numerical operations, often with pandas
 # Environment & Configuration Management
 python-dotenv>=1.0.0        # For loading environment variables from .env files
 
-# Geospatial Analysis & Interactive Visualization
-geopandas>=0.14.0           # For working with geospatial data (e.g., GeoJSON, Shapefiles)
-plotly>=5.18.0              # For interactive plotting, includes plotly.express (px)
+# Visualization
+matplotlib>=3.8.0           # For static, publication-quality visualizations
+plotly>=5.18.0              # For interactive plotting (includes plotly.express)
+geopandas>=0.14.0           # For geospatial data visualization
+
+# Development & Notebook Environment
+nbformat>=4.2.0           # Required by Plotly for rendering in notebooks
 
 # Machine Learning
 scikit-learn>=1.4.0,<2.0.0  # Avoids potential breaking changes when scikit-learn 2.0 releases
