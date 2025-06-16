@@ -15,8 +15,8 @@ import requests # For downloading geospatial data
 
 # Input data files
 # IMPORTANT: Update this paths if needed
-RENTAL_CSV_PATH = '../data/raw/madrid_rental_properties_raw_1.csv'
-SALE_CSV_PATH = '../data/raw/madrid_sale_properties_raw_1.csv'
+RENTAL_CSV_PATH = '../data/processed/madrid_rental_properties_processed_1.csv'
+SALE_CSV_PATH = '../data/processed/madrid_sale_properties_processed_1.csv'
 
 # Geospatial data
 GEOSPATIAL_DATA_URL = "https://geoportal.madrid.es/fsdescargas/IDEAM_WBGEOPORTAL/LIMITES_ADMINISTRATIVOS/Barrios/TopoJSON/Barrios.json"
@@ -34,7 +34,7 @@ LATITUDE_COL = 'latitude'
 LONGITUDE_COL = 'longitude'
 
 # Property type specific columns
-RENTAL_PRICE_COL = 'rent_eur_per_month'
+RENTAL_PRICE_COL = 'price_eur_pm'
 SALE_PRICE_COL = 'price_eur'
 
 # Column names from GeoJSON (these are typical for Madrid's official GeoJSON)
