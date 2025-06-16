@@ -230,11 +230,11 @@ This is the core data processing and unsupervised learning step. These scripts w
 The outputs are a new CSV file with a `cluster` column (saved to `data/processed/`) and all the necessary ML artifacts (encoders, scaler, K-Means model) saved to the `model/artifacts/` directory.
 
 *   **To generate clusters for sale properties:**
-*   ```bash
+    ```bash
     python model/create_property_clusters_sales.py
     ```
 *   **To generate clusters for rental properties:**
-*   ```bash
+    ```bash
     python model/create_property_clusters_rental.py
     ```
 
