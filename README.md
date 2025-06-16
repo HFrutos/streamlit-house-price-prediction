@@ -16,84 +16,90 @@ A Streamlit web application that provides predictions for property sale and rent
     - [1. Data Collection (Web Scraping)](#1-data-collection-web-scraping)
     - [2. Data Processing and Preparation](#2-data-processing-and-preparation)
     - [3. Generating Choropleth Maps](#3-generating-choropleth-maps)
-    - [4. Model Training (planned)](#4-model-training-planned)
-    - [5. Running the Streamlit Application](#5-running-the-streamlit-application)
+    - [4. Property Clustering](#4-property-clustering)
+    - [5. Model Training (planned)](#5-model-training-planned)
+    - [6. Running the Streamlit Application](#6-running-the-streamlit-application)
   - [File Attributes (`.gitattributes`)](#file-attributes-gitattributes)
   - [License](#license)
 
 ## Project Overview
-This project aims to build an end-to-end application for predicting house prices and rental rates in Madrid. It involves scraping data from pisos.com, processing the data, training machine learning models, and deploying an interactive frontend using Streamlit for users to get predictions and explore property data.
+This project aims to build an end-to-end application for analyzing house prices and rental rates in Madrid. It involves a full pipeline: scraping data from pisos.com, cleaning and preprocessing the data, using unsupervised clustering (K-Means) to discover distinct market segments, and finally, training a supervised classification model to categorize new properties into these segments. The entire project is orchestrated to support an interactive frontend built with Streamlit.
 
 ## Features
 * Web scraping scripts to collect data for both sale and rental properties.
 * Data cleaning and preprocessing pipeline.
+* Unsupervised clustering to identify distinct property market segments (e.g., "Standard Apartments", "Modern Luxury Homes").
 * Machine learning model for price/rent prediction.
-* Interactive Streamlit web application for:
-    * Inputting property features to get a price/rent estimate.
-    * Exploring visualizations of the property market data.
+* Interactive Streamlit web application for data exploration and prediction.
 
 ## Technology Stack
 * **Python 3.12**
 * **Web Scraping:** Requests, BeautifulSoup4
-* **Data Manipulation:** Pandas, NumPy
-* **Machine Learning:** Scikit-learn
+* **Data Science & ML:** Pandas, NumPy, Scikit-learn
 * **Web Application:** Streamlit
+* **Environment Management:** python-dotenv
 
 ## Project Structure
 ```bash
 streamlit-house-price-prediction/
-├── app/                       # Streamlit frontend application
-│   ├── main.py                # Core app (entry point: streamlit run app/main.py)
-│   ├── pages/                 # Sub-pages for the multi-page Streamlit app
-│   │   ├── predict.py         # Prediction page
-│   │   └── explore.py         # Data visualization page
-│   ├── assets/                # Static assets (images, custom CSS)
-│   └── utils/                 # Utility functions shared across the Streamlit app
-│       ├── data_loader.py     # Load datasets
-│       └── model_loader.py    # Load ML model
+├── app/                                        # Streamlit frontend application
+│   ├── main.py                                 # Core app (entry point: streamlit run app/main.py)
+│   ├── pages/                                  # Sub-pages for the multi-page Streamlit app
+│   │   ├── predict.py                          # Prediction page
+│   │   └── explore.py                          # Data visualization page
+│   ├── assets/                                 # Static assets (images, custom CSS)
+│   └── utils/                                  # Utility functions shared across the Streamlit app
+│       ├── data_loader.py                      # Load datasets
+│       └── model_loader.py                     # Load ML model
 │
-├── data/                      # Datasets (only local, included in .gitignore)
-│   ├── raw/                   # Original data (immutable)
-│   ├── processed/             # Cleaned/transformed/aggregated data
-│   └── geodata/               # Geospatial data
+├── data/                                       # Datasets (only local, included in .gitignore)
+│   ├── raw/                                    # Original data (immutable)
+│   ├── processed/                              # Cleaned/transformed/aggregated data
+│   └── geodata/                                # Geospatial data
 │
-├── notebooks/                 # Jupyter notebooks for experimentation, analysis, and research
-│   ├── EDA.ipynb              # Exploratory analysis
-│   └── model_training.ipynb   # Model experiments
+├── notebooks/                                  # Jupyter notebooks for experimentation and analysis
+│   ├── cluster_profiling_sale.ipynb            # Notebook for analyzing sales clusters
+│   ├── cluster_profiling_rental.ipynb          # Notebook for analyzing rental clusters
+│   ├── elbow_sale.ipynb                        # Notebook for determining optimal K for sale clustering
+│   └── elbow_sale.ipynb                        # Notebook for determining optimal K for rental clustering                      
 │
-├── model/                     # Machine learning model-related files
-│   ├── trained_model.pkl      # Serialized (saved) trained machine learning model
-│   └── model_training.py      # Python script for training/retraining the ML model
+├── model/                                      # ML pipelines, artifacts, and notebooks
+│   ├── create_property_clusters_sales.py       # Pipeline for sales data preprocessing & clustering
+│   ├── create_property_clusters_rental.py      # Pipeline for rental data preprocessing & clustering
+│   ├── train_cluster_classifier_sales.py       # Script to train the sales classifier
+│   ├── train_cluster_classifier_rental.py      # Script to train the rental classifier
+│   └── artifacts/
+│       └── sale_scaler.pkl, sale_kmeans_model.pkl, ... # Example saved ML artifacts
 │
-├── reports/                   # Generated reports, visualizations, and static outputs
-│   ├── figures/               # Static plots or charts (e.g., PNG, SVG from EDA)
-│   └── maps/                  # Generated interactive map HTML files
+├── reports/                                    # Generated reports, visualizations, and static outputs
+│   ├── figures/                                # Static plots or charts (e.g., PNG, SVG from EDA)
+│   └── maps/                                   # Generated interactive map HTML files
 │
-├── scrapers/                  # Scripts for web scraping property data
-│   ├── scrape_pisos_rental.py # Scrapes rental properties
-│   └── scrape_pisos_sale.py   # Scrapes sale properties
+├── scrapers/                                   # Scripts for web scraping property data
+│   ├── scrape_pisos_rental.py                  # Scrapes rental properties
+│   └── scrape_pisos_sale.py                    # Scrapes sale properties
 │
-├── scripts/                   # Standalone utility or processing scripts
-│   ├── choropleth_maps.py     # Script for creating map HTML files
-│   ├── process_sale_data.py   # Script for cleaning and transforming raw sale data
-│   └── process_rental_data.py # Script for cleaning and transforming raw rental data
+├── scripts/                                    # Standalone utility or processing scripts
+│   ├── choropleth_maps.py                      # Script for creating map HTML files
+│   ├── process_sale_data.py                    # Script for cleaning and transforming raw sale data
+│   └── process_rental_data.py                  # Script for cleaning and transforming raw rental data
 │
-├── sql/                       # SQL scripts for database schema, staging, ETL, queries, etc.
+├── sql/                                        # SQL scripts for database schema, staging, ETL, queries, etc.
 │   ├── 01_schema.sql
 │   ├── 02_staging.sql
 │   ├── 03_etl.sql
-│   └── README.md              # (Optional) Explanation of the SQL scripts and database setup
+│   └── README.md                               # (Optional) Explanation of the SQL scripts and database setup
 │
-├── tests/                     # Automated tests for the project (e.g., unit, integration tests)
-│   ├── unit/                  # Unit tests for individual functions/modules
-│   └── integration/           # Integration tests for combined parts of the system
+├── tests/                                      # Automated tests for the project (e.g., unit, integration tests)
+│   ├── unit/                                   # Unit tests for individual functions/modules
+│   └── integration/                            # Integration tests for combined parts of the system
 │
-├── .env.example               # Template for environment variables (secrets should be in a local .env file)
-├── .gitattributes             # Defines attributes for paths/files for Git
-├── .gitignore                 # Specifies intentionally untracked files
-├── LICENSE.md                 # Project license information
-├── requirements.txt           # Dependencies
-└── README.md                  # This file: Project overview, setup, and usage instructions
+├── .env.example                                # Template for environment variables (secrets should be in a local .env file)
+├── .gitattributes                              # Defines attributes for paths/files for Git
+├── .gitignore                                  # Specifies intentionally untracked files
+├── LICENSE.md                                  # Project license information
+├── requirements.txt                            # Dependencies
+└── README.md                                   # This file: Project overview, setup, and usage instructions
 ```
 
 ## Getting Started
@@ -218,7 +224,21 @@ To visualize property data (e.g., number of properties per neighborhood, average
     This script uses processed data and geospatial information (e.g., from `data/geodata/`) to create interactive HTML maps.
 * **Output:** The generated maps will be saved in the `reports/maps/` directory (e.g., `madrid_property_counts_map.html`, `madrid_average_price_map.html`). You can open these HTML files directly in a web browser to view the maps.
 
-### 4. Model Training (planned)
+### 4. Property Clustering
+This is the core data processing and unsupervised learning step. These scripts will take the processed data, apply all encoding and imputation, scale the features, and run K-Means to generate cluster labels.
+
+The outputs are a new CSV file with a `cluster` column (saved to `data/processed/`) and all the necessary ML artifacts (encoders, scaler, K-Means model) saved to the `model/artifacts/` directory.
+
+*   **To generate clusters for sale properties:**
+*   ```bash
+    python model/create_property_clusters_sales.py
+    ```
+*   **To generate clusters for rental properties:**
+*   ```bash
+    python model/create_property_clusters_rental.py
+    ```
+
+### 5. Model Training (planned)
 This project aims to predict house prices and rental rates based on property features.
 
 * **Experimentation & Development:** Jupyter Notebooks for model development and initial experiments can be found in `notebooks/` (e.g., `notebooks/model_training_experiments.ipynb`).
@@ -229,7 +249,7 @@ This project aims to predict house prices and rental rates based on property fea
     ```
     The trained model is typically saved to a file like `model/trained_model.pkl`.
 
-### 5. Running the Streamlit Application
+### 6. Running the Streamlit Application
 The interactive web application allows users to get price predictions and explore property data visualizations.
 
 * **To start the Streamlit web application:**
