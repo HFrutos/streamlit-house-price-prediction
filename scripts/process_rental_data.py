@@ -36,8 +36,8 @@ PROJECT_ROOT = SCRIPT_DIR.parent
 # Define paths for input (raw data) and output (processed data)
 RAW_DATA_DIR = PROJECT_ROOT / "data" / "raw"
 PROCESSED_DATA_DIR = PROJECT_ROOT / "data" / "processed"
-INPUT_FILENAME = "madrid_rental_properties_raw_1.csv" # Or your specific raw CSV file name
-OUTPUT_FILENAME = "madrid_rental_properties_processed_1.csv"
+INPUT_FILENAME = "madrid_rental_properties_raw.csv" # Or your specific raw CSV file name
+OUTPUT_FILENAME = "madrid_rental_properties_processed.csv"
 
 INPUT_FILEPATH = RAW_DATA_DIR / INPUT_FILENAME
 OUTPUT_FILEPATH = PROCESSED_DATA_DIR / OUTPUT_FILENAME

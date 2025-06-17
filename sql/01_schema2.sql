@@ -91,7 +91,7 @@ CREATE TABLE property (
   superficie_util      DECIMAL(8,2), -- m^2
   habitaciones         TINYINT,
   banos                TINYINT,
-  planta               SMALLINT,
+  planta               SMALLINT, -- tiene que ser decimal, presuelo es 0.5
   estado_conservacion  VARCHAR(60), --
   age_range_id         INT,
 
