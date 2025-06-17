@@ -152,6 +152,8 @@
     },
     "final_feature_list": [
         "barrio_encoded",
+        "latitude",
+        "longitude",
         "adaptado_movilidad_reducida",
         "aire_acondicionado",
         "antiguedad",

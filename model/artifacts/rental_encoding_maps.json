@@ -145,6 +145,8 @@
     },
     "final_feature_list": [
         "barrio_encoded",
+        "latitude",
+        "longitude",
         "adaptado_movilidad_reducida",
         "aire_acondicionado",
         "antiguedad",
@@ -168,6 +170,7 @@
         "trastero",
         "vidrios_dobles",
         "planta_numerica",
+        "acepta_mascotas",
         "amueblado_True",
         "amueblado_nan"
     ]

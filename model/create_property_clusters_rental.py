@@ -92,15 +92,14 @@ def preprocess_and_encode(df, target_variable, encoders_filepath, imputer_filepa
 
     # Step 2a: Drop unnecessary columns
     df.drop(columns=['url', 'property_id', 'scraped_at', 'energy_cert_classification',
-                     'description', 'superficie_util', 'orientacion_list',
-                     'distrito', 'latitude', 'longitude'], 
+                     'description', 'superficie_util', 'orientacion_list'], 
             inplace=True, errors='ignore')
     print(f"Dropped identifier and redundant location columns. Shape is now: {df.shape}")
 
     # Step 2b: Drop columns with a high percentage of missing values
     missing_value_percent = df.isnull().sum() / len(df)
     cols_to_drop_high_nan = missing_value_percent[missing_value_percent > NAN_DROP_THRESHOLD].index
-    cols_to_keep_regardless_of_nan = ['amueblado', 'antiguedad']
+    cols_to_keep_regardless_of_nan = ['amueblado', 'antiguedad', 'acepta_mascotas']
     cols_to_drop_high_nan = [col for col in cols_to_drop_high_nan if col not in cols_to_keep_regardless_of_nan]
     
     if cols_to_drop_high_nan:
@@ -147,7 +146,7 @@ def preprocess_and_encode(df, target_variable, encoders_filepath, imputer_filepa
     print("Converted boolean columns to integer type for imputation.")
 
     # Isolate features for imputation
-    feature_cols = df.drop(columns=[target_variable]).columns.tolist()
+    feature_cols = df.drop(columns=[target_variable, 'distrito']).columns.tolist()
     features_df = df[feature_cols].copy() # Use .copy() to work on an explicit copy
 
     # Avoid ValueError from all-NaN columns: Drop any column that is completely empty.
@@ -200,7 +199,7 @@ if __name__ == "__main__":
 
         # Part 2: Feature Scaling
         print("\n--- 3. Scaling Features ---")
-        features = df_processed.drop(columns=['price_eur_pm'])
+        features = df_processed.drop(columns=['price_eur_pm', 'distrito', 'latitude', 'longitude'])
         
         # Avoid RuntimeWarning: Identify and remove columns with zero variance BEFORE scaling
         variances = features.var()
