@@ -17,7 +17,9 @@ A Streamlit web application that provides predictions for property sale and rent
     - [2. Data Processing and Preparation](#2-data-processing-and-preparation)
     - [3. Generating Choropleth Maps](#3-generating-choropleth-maps)
     - [4. Property Clustering](#4-property-clustering)
-    - [5. Model Training (planned)](#5-model-training-planned)
+    - [5. Classifier Training](#5-classifier-training)
+      - [5a. Find Best Hyperparameters (Optional but Recommended)](#5a-find-best-hyperparameters-optional-but-recommended)
+      - [5b. Train the Final Classifier](#5b-train-the-final-classifier)
     - [6. Running the Streamlit Application](#6-running-the-streamlit-application)
   - [File Attributes (`.gitattributes`)](#file-attributes-gitattributes)
   - [License](#license)
@@ -63,13 +65,16 @@ streamlit-house-price-prediction/
 │   ├── elbow_sale.ipynb                        # Notebook for determining optimal K for sale clustering
 │   └── elbow_sale.ipynb                        # Notebook for determining optimal K for rental clustering                      
 │
-├── model/                                      # ML pipelines, artifacts, and notebooks
+├── model/                                      # ML pipelines and saved artifacts
+│   ├── artifacts/                              # Saved encoders, scalers, and models
+│   │   ├── sale_property_classifier.pkl        # Example: Final sales classifier
+│   │   └── rental_property_classifier.pkl      # Example: Final rental classifier
 │   ├── create_property_clusters_sales.py       # Pipeline for sales data preprocessing & clustering
 │   ├── create_property_clusters_rental.py      # Pipeline for rental data preprocessing & clustering
-│   ├── train_cluster_classifier_sales.py       # Script to train the sales classifier
-│   ├── train_cluster_classifier_rental.py      # Script to train the rental classifier
-│   └── artifacts/
-│       └── sale_scaler.pkl, sale_kmeans_model.pkl, ... # Example saved ML artifacts
+│   ├── find_best_hyperparameters_sale.py       # Hyperparameter tuning script for sales model
+│   ├── find_best_hyperparameters_rental.py     # Hyperparameter tuning script for rental model
+│   ├── train_final_classifier_sales.py         # Script to train the final sales classifier
+│   └── train_final_classifier_rental.py        # Script to train the final rental classifier
 │
 ├── reports/                                    # Generated reports, visualizations, and static outputs
 │   ├── figures/                                # Static plots or charts (e.g., PNG, SVG from EDA)
@@ -238,16 +243,36 @@ The outputs are a new CSV file with a `cluster` column (saved to `data/processed
     python model/create_property_clusters_rental.py
     ```
 
-### 5. Model Training (planned)
-This project aims to predict house prices and rental rates based on property features.
+### 5. Classifier Training
+This two-part process finds the best parameters for the classification model and then trains the final version.
 
-* **Experimentation & Development:** Jupyter Notebooks for model development and initial experiments can be found in `notebooks/` (e.g., `notebooks/model_training_experiments.ipynb`).
-* **Training Script:** A more finalized script for training or retraining the model is located at `model/model_training.py`.
-    ```bash
-    # Example command to run the model training script
-    python model/model_training.py
+#### 5a. Find Best Hyperparameters (Optional but Recommended)
+This script runs an Optuna study to find the best parameters and prints them to the console.
+
+*   **For the sales model**:
+    ```Bash
+    python model/find_best_hyperparameters_sale.py
     ```
-    The trained model is typically saved to a file like `model/trained_model.pkl`.
+
+*   **For the rental model**:
+    ```Bash
+    python model/find_best_hyperparameters_rental.py
+    ```
+
+The output of this script is a dictionary of parameters you will use in the next step.
+
+#### 5b. Train the Final Classifier
+This script takes the best parameters, trains the model on all available data, evaluates it, and saves the final classifier artifact to model/artifacts/.
+
+*   **To train the final sales property classifier**:
+    ```Bash
+    python model/train_final_classifier_sales.py
+    ```
+
+*   **To train the final rental property classifier**:
+    ```Bash
+    python model/train_final_classifier_rental.py
+    ```
 
 ### 6. Running the Streamlit Application
 The interactive web application allows users to get price predictions and explore property data visualizations.

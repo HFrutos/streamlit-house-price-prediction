@@ -1,0 +1,8 @@
+{
+    "n_estimators": 930,
+    "learning_rate": 0.1974974954076746,
+    "num_leaves": 281,
+    "max_depth": 3,
+    "reg_alpha": 5.1219063477777083e-05,
+    "reg_lambda": 0.038062620276560245
+}
