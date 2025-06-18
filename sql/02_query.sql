@@ -14,6 +14,80 @@ SELECT * FROM property_feature;
 
 SELECT * FROM feature_catalog;
 
+SELECT * FROM listing
+WHERE scrape_status = "Removed";
+
+DELETE FROM location
+ WHERE location_id = 271
+   AND barrio  IS NULL
+   AND distrito IS NULL;
+   
+SELECT ROW_COUNT(); -- para confirmar que has borrado 1 fila
+COMMIT;
+
+SELECT * 
+FROM location
+WHERE location_id = 271;
+
+
+-- Número total de listings en CSV vs en la BD:
+SELECT COUNT(*) FROM listing;
+-- Ver los primeros 10 listings:
+SELECT * FROM listing ORDER BY scraped_at DESC LIMIT 10;
+-- Listar algunas propiedades y su ubicación:
+SELECT p.property_id, p.property_native_id, l.barrio, l.distrito
+  FROM property p
+  JOIN location l ON p.location_id = l.location_id
+  LIMIT 10;
+-- Ver features de una propiedad concreta:
+SELECT pf.property_id, fc.nombre
+  FROM property_feature pf
+  JOIN feature_catalog fc ON pf.feature_id = fc.feature_id
+  WHERE pf.property_id = 10;
+  
+  
+  SELECT COUNT(*) AS total_listings,
+       COUNT(DISTINCT url) AS distinct_urls
+  FROM listing;
+  
+  SELECT url, COUNT(*) AS cnt
+  FROM listing
+ GROUP BY url
+HAVING cnt > 1
+ ORDER BY cnt DESC
+ LIMIT 10;
+ 
+ 
+ DELETE l1
+  FROM listing l1
+  JOIN listing l2 
+    ON l1.url = l2.url 
+   AND l1.scraped_at < l2.scraped_at;
+  
+  
+DELETE FROM listing
+ WHERE listing_id NOT IN (
+     SELECT max_id FROM (
+         SELECT MAX(listing_id) AS max_id
+           FROM listing
+          GROUP BY url
+     ) AS sub
+ );
+ 
+ 
+-- 1. Desactivar
+SET SQL_SAFE_UPDATES = 0;
+
+-- 2. Borrar duplicados: conservar sólo la fila más reciente por URL
+DELETE l1
+  FROM listing l1
+  JOIN listing l2
+    ON l1.url = l2.url
+   AND l1.scraped_at < l2.scraped_at;
+
+-- 3. Volver a activar (opcional)
+SET SQL_SAFE_UPDATES = 1;
+
 
 -- 1) Conteo de propiedades por distrito (gráfico de barras / mapa coroplético)
 SELECT
