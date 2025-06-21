@@ -1,4 +1,4 @@
-USE pisos3;
+USE pisos4;
 
 SELECT * FROM age_range;
 
@@ -8,9 +8,20 @@ SELECT * FROM property;
 
 SELECT * FROM listing;
 
+SELECT DISTINCT(price_kind) 
+FROM listing;
+
+SELECT *
+FROM listing
+WHERE price_kind = "sale_price";
+
 SELECT * FROM energy_certificate;
 
 SELECT * FROM property_feature;
+
+SELECT * 
+FROM property_feature
+WHERE feature_id = 19;
 
 SELECT * FROM feature_catalog;
 
@@ -74,7 +85,8 @@ DELETE FROM listing
      ) AS sub
  );
  
- 
+SELECT COUNT(*) 
+FROM energy_certificate;
 -- 1. Desactivar
 SET SQL_SAFE_UPDATES = 0;
 
@@ -88,6 +100,107 @@ DELETE l1
 -- 3. Volver a activar (opcional)
 SET SQL_SAFE_UPDATES = 1;
 
+SELECT url, COUNT(*) c 
+  FROM listing 
+ GROUP BY url 
+HAVING c>1;
+
+SELECT property_id,feature_id, COUNT(*) c 
+  FROM property_feature 
+ GROUP BY property_id,feature_id 
+HAVING c>1;
+SELECT COUNT(*)
+FROM property p
+LEFT JOIN property_feature pf
+ON p.property_id=pf.property_id
+WHERE pf.property_id IS NULL;
+
+SELECT COUNT(*) FROM property;  
+SELECT COUNT(*) FROM listing;  
+SELECT COUNT(*) FROM listing WHERE scrape_status='Success';  
+SELECT COUNT(*) FROM listing WHERE scrape_status='Removed';  
+SELECT COUNT(*) FROM energy_certificate;  
+SELECT COUNT(*) FROM property_feature;  
+
+SELECT COUNT(DISTINCT property_native_id) FROM property;
+
+SELECT url, COUNT(*) AS cnt
+  FROM listing
+ GROUP BY url
+HAVING cnt > 1;
+
+SELECT property_id, feature_id, COUNT(*) AS cnt
+  FROM property_feature
+ GROUP BY property_id, feature_id
+HAVING cnt > 1;
+
+SELECT COUNT(*) AS no_cert
+  FROM property p
+LEFT JOIN energy_certificate ec
+    ON p.property_id = ec.property_id
+ WHERE ec.property_id IS NULL;
+ 
+ SELECT
+  p.property_id,
+  COUNT(l.listing_id) AS total_listings
+FROM property p
+LEFT JOIN listing l
+  ON p.property_id = l.property_id
+GROUP BY p.property_id
+ORDER BY total_listings DESC;
+ 
+SELECT
+  barrio,
+  distrito,
+  COUNT(*) AS veces
+FROM location
+GROUP BY barrio, distrito
+HAVING veces > 1;
+
+SELECT property_native_id, COUNT(*) AS veces
+  FROM property
+ GROUP BY property_native_id
+HAVING veces > 1;
+
+SELECT * FROM listing 
+WHERE property_id = 3817; 
+ 
+SELECT 
+  (SELECT COUNT(*) FROM property)              AS n_property,
+  (SELECT COUNT(*) FROM listing)               AS n_listing,
+  (SELECT COUNT(*) FROM listing WHERE scrape_status='Success')    AS n_succ,
+  (SELECT COUNT(*) FROM listing WHERE scrape_status='Removed')    AS n_rem,
+  (SELECT COUNT(*) FROM energy_certificate)    AS n_energy,
+  (SELECT COUNT(*) FROM property_feature)      AS n_pf;
+
+
+SELECT COUNT(*)
+FROM property p
+LEFT JOIN energy_certificate ec
+ON p.property_id = ec.property_id
+WHERE ec.property_id IS NULL;
+
+SELECT COUNT(*) 
+  FROM property p
+  LEFT JOIN listing l 
+    ON p.property_id = l.property_id 
+   AND l.scrape_status='Success'
+ WHERE l.listing_id IS NULL;
+
+SELECT COUNT(DISTINCT p.property_id)
+  FROM property p
+  JOIN listing l 
+    ON p.property_id = l.property_id
+ WHERE l.scrape_status='Success';
+
+SELECT url, COUNT(*) c
+  FROM listing
+ WHERE scrape_status='Success'
+ GROUP BY url
+HAVING c>1;
+
+
+
 
 -- 1) Conteo de propiedades por distrito (gráfico de barras / mapa coroplético)
 SELECT
@@ -97,6 +210,9 @@ FROM property p
 JOIN location l ON p.location_id = l.location_id
 GROUP BY l.distrito
 ORDER BY num_properties DESC;
+
+
+
 
 -- 2) Distribución de tipos de anuncio (pastel o barras)
 SELECT

@@ -12,6 +12,7 @@
 --
 
 -- Creacion y seleccion de base de datos
+DROP DATABASE IF EXISTS pisos4;
 CREATE DATABASE IF NOT EXISTS pisos4;
 USE pisos4;
 
@@ -77,6 +78,9 @@ CREATE TABLE property (
 	  FOREIGN KEY(age_range_id) REFERENCES age_range(age_range_id)
 );
 
+ALTER TABLE property
+  ADD UNIQUE uq_property_native_id (property_native_id);
+
 
 -- 4. Anuncio 
 -- Cada anuncio vinculado a una propiedad; guarda tipo (sale/rental) y precio.
@@ -85,7 +89,7 @@ CREATE TABLE property (
 CREATE TABLE listing (
   listing_id     INT AUTO_INCREMENT PRIMARY KEY,
   property_id    INT NOT NULL,
-  url 			 varchar(120),  
+  url 			 varchar(120) UNIQUE,  
   price_kind     ENUM('sale_price','rent_month') NOT NULL,
   price_eur      DECIMAL(14,2)                   NOT NULL, -- precio que aparece en el anuncio, ya sea de alquiler o venta 
 
@@ -98,7 +102,8 @@ CREATE TABLE listing (
         FOREIGN KEY (property_id) REFERENCES property(property_id)
         ON DELETE CASCADE
 );
-
+ALTER TABLE listing
+  ADD UNIQUE idx_listing_url (url);
 
 -- 5. Certificado energético
 -- Rating de consumo y emisiones por propiedad. NULL si no se conoce.
@@ -128,7 +133,7 @@ CREATE TABLE feature_catalog (
 CREATE TABLE property_feature (
   property_id  INT,
   feature_id   INT,
-  valor        VARCHAR(40), -- este valor realmente hace falta?
+  valor        VARCHAR(40) NOT NULL, 
   PRIMARY KEY (property_id, feature_id),
   CONSTRAINT fk_pf_property  FOREIGN KEY (property_id)  REFERENCES property(property_id) ON DELETE CASCADE,
   CONSTRAINT fk_pf_feature   FOREIGN KEY (feature_id)   REFERENCES feature_catalog(feature_id) 

@@ -6,6 +6,25 @@ import numpy as np
 import sys
 
 
+from dotenv import load_dotenv
+import os
+
+# carga las vars definidas en .env al entorno
+load_dotenv()
+
+DB_HOST = os.getenv("DB_HOST")
+DB_USER = os.getenv("DB_USER")
+DB_PASS = os.getenv("DB_PASS")
+DB_NAME = os.getenv("DB_NAME")
+
+if not all([DB_HOST, DB_USER, DB_PASS, DB_NAME]):
+    print("ERROR: falta alguna variable de entorno:")
+    print("DB_HOST=", DB_HOST)
+    print("DB_USER=", DB_USER)
+    print("DB_PASS=", DB_PASS)
+    print("DB_NAME=", DB_NAME)
+    sys.exit(1)
+    
 print("Script de carga de la base de datos")
 # cargas los datos desde el csv
 
@@ -32,10 +51,10 @@ df = df.replace({np.nan: None})
 print("Conectando con la base de datos..")
 try:
     conn = mysql.connector.connect(
-        host="localhost",
-        user="root",
-        password="contraseña",
-        database="pisos4"
+        host=DB_HOST,
+        user=DB_USER,
+        password=DB_PASS,
+        database=DB_NAME
     )
     cursor = conn.cursor()
     print("- Conexión establecida")
@@ -64,7 +83,7 @@ ages = cursor.fetchall()
 age_map = {label: age_range_id for age_range_id, label in ages}
 
 
-# Tabla feature_map 
+# Tabla feature_catalog 
 print("2.- Insertando catalogo de features..")
 
 features = [
