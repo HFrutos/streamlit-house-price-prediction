@@ -216,10 +216,10 @@ ORDER BY num_properties DESC;
 
 -- 2) Distribución de tipos de anuncio (pastel o barras)
 SELECT
-listing_type,
+price_kind,
 COUNT(*) AS cantidad
 FROM listing
-GROUP BY listing_type;
+GROUP BY price_kind;
 
 -- 3) Precio medio de venta por distrito (heat-map o barras)
 SELECT
@@ -255,7 +255,7 @@ ORDER BY year_month, lst.price_kind;
 
 -- 6) Distribución de precio por m² (histograma / densidad)
 SELECT
-lst.listing_type,
+lst.price_kind,
 (lst.price_eur / NULLIF(p.superficie_construida,0)) AS price_per_sqm
 FROM listing lst
 JOIN property p ON lst.property_id = p.property_id
