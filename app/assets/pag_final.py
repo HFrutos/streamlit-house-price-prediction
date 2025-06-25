@@ -1,331 +1,505 @@
-import streamlit as st
+import os
 import pandas as pd
 import plotly.express as px
+import matplotlib.pyplot as plt
 import plotly.graph_objects as go
-import streamlit.components.v1 as components
-import os
-from streamlit_folium import folium_static
 import folium
-from folium import Map
 from folium.plugins import MarkerCluster
+from streamlit_folium import folium_static
+import streamlit as st
+from sklearn.preprocessing import MinMaxScaler
+import pickle
+from math import pi
+import json
 import requests
 
 
-# Configuración de la página
-st.set_page_config(
-    page_title='house-price-prediction',
-    page_icon='🏠',
-    layout='wide',
-    initial_sidebar_state='collapsed',
-    menu_items={
-        'Get help': 'https://docs.streamlit.io',
-        'Report a bug': 'https://github.com/streamlit/streamlit/issues',
-        'About': '### Streamlit App - Información\nEsta aplicación está creada con Streamlit.'
-    }
-)
+# ---------------------------
+# CARGA DESDE AIRTABLE
+# ---------------------------
+TOKEN = "patwbIvz6gTXFsl4Y.6dfe3124e999ca6d7af755c456617541256a28f1725f2a51dff9b89237c3380e"
+BASE_ID = "appWlFma1nHFvUIVS"
+TABLE_ID = "tbl0oRpWsFUHBIl9Z"
+AIRTABLE_URL = f"https://api.airtable.com/v0/{BASE_ID}/{TABLE_ID}"
+HEADERS = {
+    "Authorization": f"Bearer {TOKEN}",
+    "Content-Type": "application/json"
+}
 
-# Leer csv´s
-df_venta = pd.read_csv('madrid_sale_properties_cleaned.csv')
-df_alquiler = pd.read_csv('madrid_rental_properties_cleaned.csv')
+def extraer_registros(formula=None, view="Grid view", page_size=100):
+    registros, offset = [], None
+    while True:
+        params = {"view": view, "pageSize": page_size}
+        if offset: params["offset"] = offset
+        if formula: params["filterByFormula"] = formula
+        r = requests.get(AIRTABLE_URL, headers=HEADERS, params=params)
+        data = r.json()
+        registros += [rec["fields"] for rec in data.get("records", [])]
+        offset = data.get("offset")
+        if not offset: break
+    return registros
 
+df_venta = pd.DataFrame(extraer_registros("({listing_type}='sale')"))
+df_alquiler = pd.DataFrame(extraer_registros("({listing_type}='rental')"))
 
+# ---------------------------
+# CARGA DE NIVELES CATEGÓRICOS
+# ---------------------------
+with open('sale_classifier_features.json', 'r', encoding='utf-8') as f:
+    cat_levels = json.load(f)
 
- # Foto monete (despues hay que mover cosicas al final del selector del sidebar)
-if 'submitted' not in st.session_state:
-    
-    col1, col_space, col_big = st.columns([2, 0.5, 5.5])  # Total: 8 → 2 + 0.5 + 5.5
+def aplicar_cat_levels(df: pd.DataFrame) -> pd.DataFrame:
+    for col, levels in cat_levels.items():
+        if col in df.columns:
+            df[col] = df[col].astype('category').cat.set_categories(levels)
+    return df
 
+df_venta = aplicar_cat_levels(df_venta)
+df_alquiler = aplicar_cat_levels(df_alquiler)
+
+for df in [df_venta, df_alquiler]:
+    if 'barrio' in df.columns:
+        df['barrio'] = df['barrio'].astype('category')
+    if 'antigüedad' in df.columns:
+        df['antigüedad'] = df['antigüedad'].astype('category')
+
+# ---------------------------
+# FUNCIONES DE FILTRADO Y PÁGINA PRINCIPAL
+# ---------------------------
+
+def filtrar_propiedades(df: pd.DataFrame, f: dict) -> pd.DataFrame:
+    mask = (
+        df['superficie_construida'].between(f['metros'][0], f['metros'][1]) &
+        df['habitaciones'].between(f['habitaciones'][0], f['habitaciones'][1])
+    )
+    if f['barrios'] and 'Todos' not in f['barrios']:
+        mask &= df['barrio'].isin(f['barrios'])
+    if f['antiguedad'] and 'antigüedad' in df.columns:
+        mask &= df['antigüedad'].isin(f['antiguedad'])
+    return df.loc[mask].copy()
+
+def show_main_page():
+    col1, _, col_big = st.columns([2, 0.5, 5.5])
     with col1:
-        st.image("orangutan.png", 
-                caption="¡Selecciona los parámetros en el sidebar de la izquierda! →", 
-                width=325)  
-
+        st.image("orangutan.png", caption="¡Selecciona los parámetros en el sidebar! →", width=325)
     with col_big:
         st.title("Predicción de Precios de Viviendas")
         st.markdown(
-            "Bienvenido/a. Esta app permite predecir el precio de una propiedad según sus características." \
-            "\n\n" \
-            "- En el menú desplegable de la izquierda puedes filtrar por tipo de operación (venta o alquiler), metros cuadrados, número de habitaciones, barrios y antigüedad." \
-            "\n\n" \
-            "- En la pestaña donde se selcciona la sección pordás seleccionar mapa de pisos, métricas, gráficas o predictivo." \
-            "\n\n" \
-            "- En la sección de Mapa de pisos podrás ver un mapa interactivo con los inmuebles que cumplen con los filtros seleccionados." \
-            "\n\n" \
-            "- En la sección de métricas podrás ver estadísticas sobre los inmuebles seleccionados, como el número de barrios, el máximo de habitaciones, el número de pisos, el máximo de metros cuadrados y el rating energético más frecuente." \
-            "\n\n" \
-            "- En la sección de Exploratory Data Analysis podrás ver distintas gráficas para comprender el mercado moviliario actual." \
-            "\n\n" \
-            "- En la seción predictivo podrás intriducir los datoss de tu inmueble para que nuestro modelo de I.A prediga el precio óptimo de tu viviendS." \
+            "Bienvenido/a. Esta app permite predecir el precio de una propiedad según sus características."
+            "\n\n- En el menú desplegable de la izquierda puedes filtrar por tipo de operación (venta o alquiler), metros cuadrados, número de habitaciones, barrios y antigüedad."
+            "\n\n- En la pestaña donde se selecciona la sección podrás seleccionar mapa de pisos, métricas, gráficas o predictivo."
+            "\n\n- En la sección de Mapa de pisos podrás ver un mapa interactivo con los inmuebles que cumplen con los filtros seleccionados."
+            "\n\n- En la sección de métricas podrás ver estadísticas sobre los inmuebles seleccionados, como el número de barrios, el máximo de habitaciones, el número de pisos, el máximo de metros cuadrados y el rating energético más frecuente."
+            "\n\n- En la sección Exploratory Data Analysis podrás ver distintas gráficas para comprender el mercado inmobiliario actual."
+            "\n\n- En la sección Predictivo podrás introducir los datos de tu inmueble para que nuestro modelo de IA prediga el precio óptimo de tu vivienda."
         )
+        with st.expander("ℹ️ Acerca del grupo / About Us"):
+            st.markdown("""  
+### 👨‍💻 Integrantes del grupo
 
+- **Akira García** – Junior Data Scientist | Ingeniero Informático | Análisis de Datos & Machine Learning  
+  [LinkedIn](https://www.linkedin.com/in/akiragarcialuis/) | [GitHub](https://github.com/akiraglhola)
 
-# database architecture 
-#st.write("🔍 Query params actuales:", st.query_params)
-with st.expander("🗄️ Arquitectura de la base de datos / Database architecture"):
-    st.write("Información de la arquitectura implementada para este proyecto, así como la importancia de cada tabla y cada columna")
+- **Marta Rivas** – Porque se lo merece  
+  [LinkedIn](https://www.linkedin.com/in/MartaRivas) | [GitHub](https://github.com/MartaRivas13)
 
-    st.markdown(
-    '<a href="/Arquitectura" target="_self">📄 Ver documentación completa →</a>',
-    unsafe_allow_html=True
-    ) 
+- **Héctor Frutos** – Es buena gente  
+  [LinkedIn](https://www.linkedin.com/in/HectorFrutos) | [GitHub](https://github.com/HFrutos)
 
-#About us 
-with st.expander("ℹ️ Acerca del grupo / About Us"):
-    st.markdown("""
-    ### 👨‍💻 Integrantes del grupo
+- **Jorge Arriaga** – Porque tiene que haber de tó  
+  [LinkedIn](https://www.linkedin.com/in/JorgeArriaga) | [GitHub](https://github.com/Jorge-Arriaga)
 
-    - **Akira García** – Aspirante a Data Scientist | Ingeniero Informático | Análisis de Datos & Machine Learning  
-      [LinkedIn](https://www.linkedin.com/in/akiragarcialuis/)
-      [GitHub](https://github.com/akiraglhola)
-    
-    - **Marta Rivas** – Porque se lo merece  
-      [LinkedIn](https://www.linkedin.com/in/marta-rivas-nevado-a1a75abb/)
-      [GitHub](https://github.com/MartaRivas13)
+Proyecto realizado como parte del curso de *Machine Learning aplicado a Datos Inmobiliarios*.
 
-    - **Héctor de Frutos** – Es buena gente  
-      [LinkedIn](https://www.linkedin.com/in/hfrutosjimenez/)
-      [GitHub](https://github.com/HFrutos)
+✉️ Para más información, contacta a: pftttttt@example.com
+            """, unsafe_allow_html=True)
+        with st.expander("Documentación técnica"):
+            st.markdown('<a href="https://github.com/HFrutos/streamlit-house-price-prediction" target="_blank">📄 Ver documentación completa →</a>', 
+            unsafe_allow_html=True
+            )
 
-    - **Jorge Arriaga** – Porque tiene que haber de tó  
-      [LinkedIn](https://www.linkedin.com/in/JorgeArriaga)
-      [GitHub](https://github.com/Jorge-Arriaga)
-
-    ---
-
-    Proyecto realizado como parte del curso de *Machine Learning aplicado a Datos Inmobiliarios*.
-
-    ✉️ Para más información, contacta a: pftttttt@example.com
-    """, unsafe_allow_html=True)
-
-# Sidebar
-with st.sidebar.form("filtros_formulario"):
-    st.markdown("Vista y comparación de inmuebles")
-
-    tipo_operacion = st.selectbox('Tipo de operación', ['venta', 'alquiler'])
-    metros = st.slider('Metros cuadrados', 20, 600, 70)
-    habitaciones = st.slider('Habitaciones', 1, 8, 2)
-
-    # Barrios
-    todos_barrios = sorted(df_venta['barrio'].dropna().unique() if tipo_operacion == 'venta' else df_alquiler['barrio'].dropna().unique())
-    opcion_barrios = ['Todos'] + todos_barrios
-    barrios_filtrados = st.multiselect(
-        'Barrios elegidos', 
-        opcion_barrios, 
-        default=['Todos'],
-        key='barrios_selector'
-    )
-
-    # Antigüedad
-    df_temp = df_venta if tipo_operacion == 'venta' else df_alquiler
-    if 'antigüedad' in df_temp.columns:
-        opciones_antiguedad = df_temp['antigüedad'].dropna().unique()
-        antiguedad_sel = st.multiselect('Antigüedad elegida', opciones_antiguedad, default=opciones_antiguedad)
-    else:
-        antiguedad_sel = []
-
-    # Sección
-    seccion = st.selectbox('Selecciona la sección', ['Mapa de pisos', 'Exploratory Data Analysis', 'Gráficas'])
-
-   
-
-    # Botón para aplicar filtros
-    submitted = st.form_submit_button("Aplicar filtros", on_click=lambda: st.session_state.update({"submitted": True}))
-if 'submitted' in st.session_state and st.session_state.submitted:
-    df = df_venta if tipo_operacion == 'venta' else df_alquiler
-else:
-    st.stop()
-
-df = df_venta if tipo_operacion == 'venta' else df_alquiler
-
-
-# Diccionario con URLs de los mapas HTML
-mapas_urls = {
-    'venta': {
-        'Individual': 'madrid_individual_properties_map_sale.html',
-        'Por zona': 'madrid_property_count_map_sale.html'
-    },
-    'alquiler': {
-        'Individual': 'madrid_individual_properties_map_rental.html',
-        'Por zona': 'madrid_property_count_map_rental.html'
-    }
-}
-# Diccionario con las rutas de los archivos HTML para los gráficos radar
-radar_html_files = {
-    'venta': 'radar_venta.html',
-    'alquiler': 'radar_alquiler.html'
-}
-
-
+# ---------------------------
+# FUNCIÓN PRINCIPAL
+# ---------------------------
 def main():
-    filtro = df[
-        (df['superficie construida'] >= metros) &
-        (df['habitaciones'] == habitaciones) ] #nos permite filtrar el dataframe según los parámetros seleccionados
-    # Filtrar por barrios (manejar caso "Todos")
-    if 'Todos' in barrios_filtrados or not barrios_filtrados:
-        # para que "todos esté elgido por defecto y seleccione todos los barrios"
-        pass
-    else:
-        barrios_a_filtrar = [b for b in barrios_filtrados if b != 'Todos']
-        if barrios_a_filtrar:
-            filtro = filtro[filtro['barrio'].isin(barrios_a_filtrar)]
-    if antiguedad_sel and 'antigüedad' in df.columns:
-        filtro = filtro[filtro['antigüedad'].isin(antiguedad_sel)] #nos añade la antigüedad a la selección
+    st.set_page_config(page_title='house-price-prediction', page_icon='🏠', layout='wide')
 
-#mapas 
+    if 'temp_filters' not in st.session_state:
+        st.session_state.temp_filters = {
+            'section': 'Página principal',
+            'tipo_operacion': 'venta',
+            'metros': (50, 150),
+            'habitaciones': (1, 4),
+            'barrios': ['Todos'],
+            'antiguedad': []
+        }
 
-    if seccion == 'Mapa de pisos':
+    with st.sidebar.form("filtros"):
+        tf = st.session_state.temp_filters
+        tf['tipo_operacion'] = st.selectbox('Tipo de operación', ['venta', 'alquiler'], index=['venta','alquiler'].index(tf['tipo_operacion']))
+        tf['metros'] = st.slider('Metros cuadrados', 20, 600, tf['metros'])
+        tf['habitaciones'] = st.slider('Habitaciones', 1, 8, tf['habitaciones'])
+        df_temp = df_venta if tf['tipo_operacion']=='venta' else df_alquiler
+        barrios = ['Todos'] + sorted(df_temp['barrio'].cat.categories) if 'barrio' in df_temp.columns else ['Todos']
+        tf['barrios'] = st.multiselect('Barrios', barrios, default=tf['barrios'])
+        if 'antigüedad' in df_temp.columns:
+            ant = df_temp['antigüedad'].cat.categories.tolist()
+            tf['antiguedad'] = st.multiselect('Antigüedad', ant, default=tf['antiguedad'])
+        else:
+            tf['antiguedad'] = []
+        tf['section'] = st.selectbox('Sección', ['Página principal','Comparativa de pisos','Exploratory Data Analysis','Predictivo'], index=0)
+        submitted = st.form_submit_button("Aplicar filtros")
+
+    if submitted:
+        st.session_state.applied_filters = st.session_state.temp_filters.copy()
+
+    f = st.session_state.applied_filters if 'applied_filters' in st.session_state else st.session_state.temp_filters
+    df_sel = df_venta if f['tipo_operacion']=='venta' else df_alquiler
+    filtro = filtrar_propiedades(df_sel, f)
+
+    if f['section']=='Página principal':
+        show_main_page()
+    elif f['section']=='Comparativa de pisos':
         st.title('Mapa de pisos en Madrid')
-        modo_busqueda = st.radio('Modo de búsqueda', ['Individual', 'Por zona'], horizontal=True)
+    elif f['section']=='Exploratory Data Analysis':
+        if filtro.empty:
+            st.warning('No hay datos para mostrar.')
+    elif f['section']=='Predictivo':
+        st.title("Predicción de precio de vivienda")
         
+
+
+# ---------------------------
+# COMPARATIVA DE PISOS
+# ---------------------------
+    if f['section'] == 'Comparativa de pisos':
+        st.title('')
+        
+
         st.subheader('Pisos que coinciden con tu búsqueda')
         st.markdown(f'**{len(filtro)} pisos encontrados**')
 
+        # Resumen para selección
+        filtro['Resumen'] = filtro.apply(
+            lambda x: f"{x['price_eur']:,}€ - {x['habitaciones']} hab - {x['superficie_construida']} m² - {x['barrio']}",
+            axis=1
+        )
+
+        st.subheader("Selecciona pisos para comparar")
+        seleccion = st.multiselect(
+            "Elige pisos", options=filtro.index, format_func=lambda idx: filtro.loc[idx, 'Resumen']
+        )
+
         if filtro.empty:
             st.warning('No hay resultados para los filtros seleccionados.')
+            st.stop()
+
+        if seleccion:
+            st.success(f"{len(seleccion)} piso(s) seleccionados")
         else:
-            filtro = filtro.dropna(subset=['lat', 'lon'])
-            filtro = filtro[(filtro['lat'].between(-90, 90)) & (filtro['lon'].between(-180, 180))]
-            
-            m = folium.Map(location=[40.4168, -3.7038], zoom_start=12)
-            
-            # sustituir aquí (y el mapa creado)
-            if modo_busqueda == 'Individual':
-                marker_cluster = MarkerCluster().add_to(m)
-                for _, row in filtro.iterrows():
-                    folium.Marker(
-                        location=[row['lat'], row['lon']],
-                        popup=f"""
-                            <b>Precio:</b> {row['price_eur']:,} €<br>
-                            <b>Habitaciones:</b> {row['habitaciones']}<br>
-                            <b>m²:</b> {row['superficie construida']}<br>
-                            <b>Barrio:</b> {row['barrio']}
-                        """,
-                        icon=folium.Icon(color='blue', icon='home')
-                    ).add_to(marker_cluster)
-            
-            folium_static(m, width=800, height=600)
+            st.info("No has seleccionado ningún piso manualmente.")
 
-#sustotuir desde aquí
-#        mapa_url = mapas_urls.get(tipo_operacion, {}).get(modo_busqueda)
-#
-#        if mapa_url:
-#            st.subheader(f'Mapa: {modo_busqueda.lower()} - {tipo_operacion}')
-#            # Mostrar el HTML del mapa
-#            with open(mapa_url, 'r', encoding='utf-8') as f:
-#                components.html(f.read(), height=600, scrolling=True)
-#        else:
-#            st.error('No se encontró el mapa para la combinación seleccionada.')
-            
-#    if seccion == 'Mapa de pisos':
-#        st.title('Mapa de pisos en Madrid')
-#        modo_busqueda = st.radio('Modo de búsqueda', ['Individual', 'Por zona'], horizontal=True)
-#        
-#        st.subheader('Pisos que coinciden con tu búsqueda')
-#        st.markdown(f'**{len(filtro)} pisos encontrados**')
-#
-#        if filtro.empty:
-#            st.warning('No hay resultados para los filtros seleccionados.')
-#        else:
-#            # Verificación y limpieza de coordenadas
-#            filtro = filtro.dropna(subset=['lat', 'lon'])
-#            filtro = filtro[(filtro['lat'].between(-90, 90)) & (filtro['lon'].between(-180, 180))]
-#-------------------------------------------------------------------------------------------------------            
+        # Limpieza de coordenadas
+        filtro = filtro.dropna(subset=['latitude', 'longitude'])
+        filtro = filtro[(filtro['latitude'].between(-90, 90)) & (filtro['longitude'].between(-180, 180))]
 
-            
-#Métricas
+        # Mapa con marcadores
+        m = folium.Map(location=[40.4168, -3.7038], zoom_start=12)
+        if not filtro.empty:
+            marker_cluster = MarkerCluster().add_to(m)
+            for _, row in filtro.iterrows():
+                folium.Marker(
+                    location=[row['latitude'], row['longitude']],
+                    popup=f"""
+                        <b>Precio:</b> {row['price_eur']:,} €<br>
+                        <b>Habitaciones:</b> {row['habitaciones']}<br>
+                        <b>m²:</b> {row['superficie_construida']}<br>
+                        <b>Barrio:</b> {row['barrio']}
+                    """,
+                    icon=folium.Icon(color='blue', icon='home')
+                ).add_to(marker_cluster)
+        folium_static(m, width=800, height=600)
 
-    elif seccion == 'Métricas':
-        st.title('Métricas de los Pisos')
+        st.subheader("")
+
+        # Selección dinámica de columnas para comparar
+        columnas_disponibles = ['price_eur', 'superficie_construida', 'habitaciones', 'banos']  
+        columnas_comparar = st.multiselect("Selecciona columnas para radar", columnas_disponibles, default=columnas_disponibles[:3])
+
+        if not columnas_comparar:
+            st.warning("Por favor selecciona al menos una columna para comparar.")
+            st.stop()
+
+        # Mapear etiquetas para las columnas 
+        etiquetas_map = {
+            'price_eur': 'Precio (€)',
+            'superficie_construida': 'Superficie (m²)',
+            'habitaciones': 'Habitaciones',
+            'banos': 'Baños'
+        }
+        etiquetas = [etiquetas_map.get(col, col) for col in columnas_comparar]
+
+        # Selección de filas para comparar 
+        if seleccion:
+            comparacion_df = filtro.loc[seleccion]
+        elif len(filtro) >= 3:
+            comparacion_df = filtro.sample(3, random_state=42)
+            st.info("Se han seleccionado 3 pisos al azar para la comparativa.")
+        elif not filtro.empty:
+            comparacion_df = filtro
+            st.info("Menos de 3 pisos disponibles. Se compararán todos los que hay.")
+        else:
+            st.warning("No hay pisos disponibles para comparar.")
+            st.stop()
+
+        # Normalización de las columnas seleccionadas
+        scaler = MinMaxScaler()
+        valores_normalizados = scaler.fit_transform(comparacion_df[columnas_comparar])
+
+        # Preparar etiquetas para cerrar el radar 
+        etiquetas_cerradas = etiquetas + [etiquetas[0]]
+
+        fig = go.Figure()
+
+        for i, row in enumerate(comparacion_df.itertuples()):
+            valores = list(valores_normalizados[i])
+            valores_cerrados = valores + [valores[0]]  # cerrar ciclo
+
+            fig.add_trace(go.Scatterpolar(
+                r=valores_cerrados,
+                theta=etiquetas_cerradas,
+                fill='toself',
+                name=str(getattr(row, 'Resumen', getattr(row, 'Index', i)))  # usa 'Resumen' o índice
+            ))
+
+        fig.update_layout(
+            polar=dict(
+                radialaxis=dict(
+                    visible=True,
+                    range=[0, 1]
+                )),
+            showlegend=True,
+            title="Radar de características normalizadas"
+        )
+
+        st.plotly_chart(fig, use_container_width=True)
+
+
+# ---------------------------
+# SECCIÓN EDA
+# ---------------------------
+    elif f['section'] == 'Exploratory Data Analysis':
+        st.title('')
 
         if filtro.empty:
-            st.warning('No hay datos para los filtros seleccionados.')
+            st.warning('No hay datos para mostrar gráficos.')
         else:
-            st.metric('Número de barrios con las características seleccionadas', filtro['barrio'].nunique())
-            st.metric('Máximo de habitaciones seleccionadas', filtro['habitaciones'].max())
-            st.metric('Número de pisos seleccionados', len(filtro))
-            st.metric('Máximo de metros cuadrados seleccionados (m²)', f'{metros:.1f}')
-            if 'energy_consumption_rating' in filtro.columns and not filtro['energy_consumption_rating'].dropna().empty:
-                st.metric('Rating energético más frecuente', filtro['energy_consumption_rating'].mode()[0])
-            else:
-                st.info("No hay datos suficientes sobre rating energético.")
+            st.subheader("Distribución de precios")
+            fig1 = px.histogram(filtro, x='price_eur', nbins=50, title='Distribución del precio en euros')
+            st.plotly_chart(fig1, use_container_width=True, key="eda_fig1")
 
-            st.subheader('Precio y superficie media por barrio')
-            medias = filtro.groupby('barrio')[['price_eur', 'superficie construida']].mean().sort_values('price_eur')
-            st.dataframe(medias.rename(columns={'price_eur': 'Precio medio (€)','superficie construida': 'Superficie media (m²)'}).style.format({
-                'Precio medio (€)': '{:,.0f} €',
-                'Superficie media (m²)': '{:.1f}'
-        }))
+            st.subheader("Precio promedio por barrio")
+            precio_barrio = filtro.groupby('barrio')['price_eur'].mean().sort_values()
+            fig2 = px.bar(precio_barrio, title='Precio promedio por barrio')
+            st.plotly_chart(fig2, use_container_width=True, key="eda_fig2")
 
-        st.subheader('Precio por barrio')
-        fig = px.bar(filtro.groupby('barrio')['price_eur'].mean().sort_values().reset_index(),x='barrio', y='price_eur', title='Precio medio por barrio')
-        st.plotly_chart(fig)
-        
-# Exploratory Data Analysis
-    elif seccion == 'Exploratory Data Analysis':
-        st.title('Visualización de datos')
+            # Mostrar tabla resumen por barrio
+            resumen_barrio = filtro.groupby('barrio').agg({
+                'price_eur': ['mean', 'median', 'count'],
+                'superficie_construida': 'mean'
+            }).round(2)
+            resumen_barrio.columns = ['Precio medio (€)', 'Precio mediano (€)', 'Nº propiedades', 'Superficie media (m²)']
+            st.dataframe(resumen_barrio.sort_values('Precio medio (€)', ascending=False))
 
-        if filtro.empty:
-            st.warning('No hay datos para los filtros seleccionados.')
-            return
+            if 'antigüedad' in filtro.columns:
+                st.subheader("Boxplot de precio según antigüedad")
+                fig3 = px.box(filtro, x='antigüedad', y='price_eur', title='Precio según antigüedad')
+                st.plotly_chart(fig3, use_container_width=True, key="eda_fig3")
 
-        st.subheader('Histograma de precios con outliers resaltados')
-        q1 = filtro['price_eur'].quantile(0.25)
-        q3 = filtro['price_eur'].quantile(0.75)
-        iqr = q3 - q1
-        outlier_threshold = q3 + 1.5 * iqr
+            if 'superficie_construida' in filtro.columns:
+                st.subheader("Distribución de superficie_construida")
+                fig4 = px.histogram(filtro, x='superficie_construida', nbins=50, title='superficie_construida')
+                st.plotly_chart(fig4, use_container_width=True, key="eda_fig4")
 
-        fig1 = px.histogram(filtro, x='price_eur', nbins=30,
-                            title='Distribución de precios (outliers en rojo)',
-                            color_discrete_sequence=['lightblue'])
+            if 'barrio' in filtro.columns and 'superficie_construida' in filtro.columns:
+                st.subheader("superficie_construida promedio por barrio")
+                superficie_barrio = filtro.groupby('barrio')['superficie_construida'].mean().sort_values()
+                fig5 = px.bar(superficie_barrio, title='superficie_construida promedio por barrio')
+                st.plotly_chart(fig5, use_container_width=True, key="eda_fig5")
 
-        outliers = filtro[filtro['price_eur'] > outlier_threshold]
-        fig1.add_trace(go.Histogram(x=outliers['price_eur'],
-                                    marker_color='red'))
-        st.plotly_chart(fig1)
+            if 'num_habitaciones' in filtro.columns:
+                st.subheader("Precio según número de habitaciones")
+                fig6 = px.box(filtro, x='num_habitaciones', y='price_eur', title='Precio por número de habitaciones')
+                st.plotly_chart(fig6, use_container_width=True, key="eda_fig6")
 
-        st.subheader('Precio por metro cuadrado por barrio')
-        if 'superficie construida' in filtro.columns:
-            filtro = filtro.copy()
-            filtro['precio_m2'] = filtro['price_eur'] / filtro['superficie construida']
-            fig2 = px.box(filtro, x='barrio', y='precio_m2',
-                          title='Precio por m² por barrio')
-            fig2.update_layout(xaxis_tickangle=-45)
-            st.plotly_chart(fig2)
+            if 'num_banos' in filtro.columns:
+                st.subheader("Distribución de número de baños")
+                fig7 = px.histogram(filtro, x='num_banos', nbins=10, title='Distribución de baños')
+                st.plotly_chart(fig7, use_container_width=True, key="eda_fig7")
 
-        st.subheader('Relación entre precio y antigüedad')
-        if 'antigüedad' in filtro.columns and 'price_eur' in filtro.columns:
-            filtro['antigüedad'] = filtro['antigüedad'].fillna('Desconocida').astype(str)
-            fig3 = px.box(filtro, x='antigüedad', y='price_eur', title='Boxplot de precio por antigüedad')
-            fig3.update_layout(xaxis_tickangle=-45)
-            st.plotly_chart(fig3)
+            if 'planta' in filtro.columns:
+                st.subheader("Precio por planta")
+                fig8 = px.box(filtro, x='planta', y='price_eur', title='Precio según planta')
+                st.plotly_chart(fig8, use_container_width=True, key="eda_fig8")
+
+            if 'estado' in filtro.columns:
+                st.subheader("Distribución del estado de las propiedades")
+                fig9 = px.histogram(filtro, x='estado', title='Estado de las propiedades')
+                st.plotly_chart(fig9, use_container_width=True, key="eda_fig9")
+
+
+
+# ---------------------------
+# SECCIÓN PREDICTIVO
+# ---------------------------
+    elif f['section'] == 'Predictivo':
+        st.title("")
+
+        bin_map = {'Sí': 1, 'No': 0}
+
+        # Selección de archivos según tipo de operación
+        if f['tipo_operacion'] == 'venta':
+            model_file = 'modelo_rf_regressor.pkl'
+            classifier_file = 'sale_property_classifier.pkl'
         else:
-            st.error('Parámetros incorrectos para graficar antigüedad.')
+            model_file = 'modelo_renta_entrenado.pkl'
+            classifier_file = 'rental_property_classifier.pkl'
 
-        # Imagenes radar
-
-# Reemplazo para el gráfico radar
-    st.subheader('Análisis de características')
-    
-    # Verificar si existe el archivo HTML correspondiente
-    radar_file = radar_html_files.get(tipo_operacion)
-    if radar_file and os.path.exists(radar_file):
+        # Cargar modelos y encoders
         try:
-            with open(radar_file, 'r', encoding='utf-8') as f:
-                html_content = f.read()
-            
-            # Mostrar el contenido HTML con un contenedor de tamaño adecuado
-            st.components.v1.html(html_content, height=500, scrolling=False)
-            
+            # Cargar modelo de clúster
+            with open(classifier_file, 'rb') as f_clf:
+                classifier = pickle.load(f_clf)
+
+            # Cargar encoders
+            with open('le_distrito.pkl', 'rb') as f_le_dist:
+                le_distrito = pickle.load(f_le_dist)
+
+            with open('le_antiguedad.pkl', 'rb') as f_le_ant:
+                le_antiguedad = pickle.load(f_le_ant)
+
+            # Cargar modelo de precio
+            with open(model_file, 'rb') as f_reg:
+                reg_data = pickle.load(f_reg)
+                model = reg_data['model']
+
         except Exception as e:
-            st.error(f"Error al cargar el gráfico interactivo: {str(e)}")
-            # Opcional: Mostrar versión estática de respaldo si existe
-            ruta_radar_jpg = f'radar_{tipo_operacion}.jpg'
-            if os.path.exists(ruta_radar_jpg):
-                st.image(ruta_radar_jpg, 
-                        caption=f'Versión estática - {tipo_operacion.capitalize()}',
-                        use_column_width=True)
-    else:
-        st.error(f"No se encontró el archivo HTML interactivo para {tipo_operacion}")
+            st.error(f"No se pudo cargar el modelo o encoder: {e}")
+            st.stop()
+
+            # Mapeo manual de antigüedad 
+        map_antiguedad = {
+            0: "Obra nueva",
+            1: "Menos de 10 años",
+            2: "Entre 10 y 20 años",
+            3: "Entre 20 y 50 años",
+            4: "Más de 50 años"
+        }
+        inv_map_antiguedad = {v: k for k, v in map_antiguedad.items()}
+
+        with st.form('form_prediccion'):
+            st.markdown("Introduce las características de tu inmueble:")
+
+            superficie_construida = st.number_input('Superficie construida (m²)', min_value=10, max_value=1000, value=70)
+            baños = st.number_input('Número de baños', min_value=0, max_value=10, value=1)
+
+            distrito = st.selectbox('Selecciona el distrito', sorted(le_distrito.classes_))
+            habitaciones = st.number_input('Número de habitaciones', min_value=1, max_value=8, value=2)
+
+            planta_opciones = ['Bajo', '1ª', '2ª', '3ª', '4ª', '5ª', '6ª', '7ª', '8ª', '9ª', '10ª o más']
+            planta_numerica_str = st.selectbox('Planta numérica', planta_opciones)
+            planta_numerica = 0 if planta_numerica_str == 'Bajo' else 10 if planta_numerica_str == '10ª o más' else int(planta_numerica_str[:-1])
+
+            exterior = st.selectbox('Exterior', ['Sí', 'No'])
+
+            antiguedad_opciones = list(map_antiguedad.values())
+            antiguedad = st.selectbox('Antigüedad', antiguedad_opciones)
+
+            terraza = st.selectbox('Terraza', ['Sí', 'No'])
+            garaje = st.selectbox('Garaje', ['Sí', 'No'])
+            calefaccion = st.selectbox('Calefacción', ['Sí', 'No'])
+
+            submitted_pred = st.form_submit_button('Predecir precio')
+
+        if submitted_pred:
+            try:
+                distrito_encoded = le_distrito.transform([distrito])[0]
+                antiguedad_encoded = inv_map_antiguedad.get(antiguedad, -1)
+
+                input_data = pd.DataFrame([{
+                    "superficie_construida": superficie_construida,
+                    "banos": baños,
+                    "distrito_encoded": distrito_encoded,
+                    "habitaciones": habitaciones,
+                    "planta_numerica": planta_numerica,
+                    "exterior": bin_map[exterior],
+                    "antiguedad_encoded": antiguedad_encoded,
+                    "terraza": bin_map[terraza],
+                    "garaje": bin_map[garaje],
+                    "calefaccion": bin_map[calefaccion]
+                }])
+
+                cluster = classifier.predict(input_data)[0]
+                cluster_label_map = {
+                    0: "",
+                    1: "",
+                    2: "",
+                    3: "",
+                    4: ""
+                }
+                cluster_label = cluster_label_map.get(cluster, "Desconocido")
+                st.info(f" Esta propiedad pertenece al grupo: **{cluster} - {cluster_label}**")
+
+                precio_pred = model.predict(input_data)[0]
+                st.success(f"💶 Precio estimado: **{precio_pred:,.2f} €**")
+
+            except Exception as e:
+                st.error(f"Error durante la predicción: {e}")
+
+        # Tabla de clústeres de ventas
+        clusters_venta = pd.DataFrame({
+            "Etiqueta": [
+                "Piso Señorial Clásico",
+                "Apartamento Estándar",
+                "Propiedad Singular (Outlier)",
+                "Lujo Moderno (Full Equip)",
+                "Premium Reformado"
+            ],
+            "Características Clave": [
+                "Grande, precio elevado, finca antigua, con ascensor, pero sin piscina/garaje.",
+                "El más económico, tamaño reducido y menos extras. El apartamento 'típico' de Madrid.",
+                "Anomalía. Extremadamente grande y caro. (Se recomienda excluir del entrenamiento del clasificador).",
+                "El más caro, grande, obra nueva o reciente, y equipado con piscina, garaje y terraza.",
+                "Precio elevado, ubicación prime, finca antigua pero reformado y amueblado."
+            ]
+        })
+
+        # Tabla de clústeres de alquiler
+        clusters_alquiler = pd.DataFrame({
+            "Etiqueta": [
+                "Residencial Familiar con Extras",
+                "Piso Básico y Económico",
+                "Apartamento Céntrico Amueblado",
+                "Vivienda de Lujo Exclusivo",
+                "Apartamento Premium (Ubicación Prime)"
+            ],
+            "Características Clave": [
+                "Grande, precio elevado, nuevo, en urbanización con piscina y garaje.",
+                "El más barato, ubicación menos céntrica, pequeño, antiguo y con pocos extras (sin amueblar).",
+                "Tamaño mediano/pequeño, 100% amueblado, en barrios de alquiler alto, con ascensor.",
+                "El más caro y grande, ubicación y calidades de lujo, con todos los extras.",
+                "Precio elevado, ubicación prime, excelente estado (reformado/nuevo), exterior y con ascensor."
+            ]
+        })
+
+        with st.expander("Leyenda de cases de inmuebles(clusters)"):
+            st.markdown("### Clústeres de Propiedades en Venta")
+            st.dataframe(clusters_venta, use_container_width=True)
+
+            st.markdown("### Clústeres de Propiedades en Alquiler")
+            st.dataframe(clusters_alquiler, use_container_width=True)
+
+
 
 if __name__ == '__main__':
     main()
