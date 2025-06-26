@@ -16,7 +16,7 @@ data/geodata/
 *.feather
 *.h5
 *.db
-#*.pkl
+*.pkl
 *.joblib
 
 # ==================== Secrets ====================
