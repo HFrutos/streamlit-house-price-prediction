@@ -108,7 +108,6 @@ def objective(trial, X, y):
 
     # We use Stratified K-Fold for cross-validation because it maintains the
     # same proportion of each cluster in every fold, which is crucial for imbalanced data.
-    # We use Stratified K-Fold for robust evaluation on potentially imbalanced clusters
     cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
     
     scores = []
