@@ -184,3 +184,13 @@ digraph ERD {
 """
 
 st.graphviz_chart(graphviz.Source(dot))
+
+
+st.markdown("""
+            
+---
+            
+### Airtable
+           
+Finalmente para poder desplegar la aplicación en remoto, se ha optado por alojar todos los datos en la plaforma Airtable, que nos permite crear una base de datos  en remoto. Esto nos permite acceder a los datos sin tener que crear una copia de la base de datos en local mejorando la accesibilidad.       
+""", unsafe_allow_html=True)

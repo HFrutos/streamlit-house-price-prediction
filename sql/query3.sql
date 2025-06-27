@@ -339,3 +339,310 @@ FROM property p
 JOIN listing lst ON p.property_id = lst.property_id
 WHERE p.latitude IS NOT NULL
 AND p.longitude IS NOT NULL;
+
+
+
+SELECT
+  l.listing_id,
+  l.url,
+  l.price_eur        AS sale_price,
+  l.scraped_at,
+  l.description,
+
+  p.property_id,
+  p.property_native_id,
+  p.latitude,
+  p.longitude,
+  p.superficie_construida,
+  p.superficie_util,
+  p.habitaciones,
+  p.banos,
+  p.planta,
+  p.estado_conservacion,
+
+  loc.barrio,
+  loc.distrito,
+
+  ar.label          AS age_range,
+
+  ec.classification AS energy_class,
+  ec.consumo_rating AS energy_consumo_rating,
+  ec.emisiones_rating AS energy_emisiones_rating,
+  ec.emision_value  AS energy_emision_value,
+  ec.consumption_value AS energy_consumption_value,
+
+  -- Extras agrupados como "nombre:valor" separados por coma
+  GROUP_CONCAT(CONCAT(fc.nombre, ':', pf.valor) 
+               ORDER BY fc.nombre
+               SEPARATOR ',') AS extras
+
+SELECT
+  l.listing_id,
+  l.url,
+  l.price_eur        AS sale_price,
+  l.scraped_at,
+  l.description,
+
+  p.property_id,
+  p.property_native_id,
+  p.latitude,
+  p.longitude,
+  p.superficie_construida,
+  p.superficie_util,
+  p.habitaciones,
+  p.banos,
+  p.planta,
+  p.estado_conservacion,
+
+  loc.barrio,
+  loc.distrito,
+
+  ar.label          AS age_range,
+
+  ec.classification AS energy_class,
+  ec.consumo_rating AS energy_consumo_rating,
+  ec.emisiones_rating AS energy_emisiones_rating,
+  ec.emision_value  AS energy_emision_value,
+  ec.consumption_value AS energy_consumption_value,
+
+  -- Extras agrupados como "nombre:valor" separados por coma
+  GROUP_CONCAT(CONCAT(fc.nombre, ':', pf.valor) 
+               ORDER BY fc.nombre
+               SEPARATOR ',') AS extras
+
+SELECT
+  l.listing_id,
+  l.url,
+  l.price_eur        AS sale_price,
+  l.scraped_at,
+  l.description,
+
+  p.property_id,
+  p.property_native_id,
+  p.latitude,
+  p.longitude,
+  p.superficie_construida,
+  p.superficie_util,
+  p.habitaciones,
+  p.banos,
+  p.planta,
+  p.estado_conservacion,
+
+  loc.barrio,
+  loc.distrito,
+
+  ar.label          AS age_range,
+
+  ec.classification AS energy_class,
+  ec.consumo_rating AS energy_consumo_rating,
+  ec.emisiones_rating AS energy_emisiones_rating,
+  ec.emision_value  AS energy_emision_value,
+  ec.consumption_value AS energy_consumption_value,
+
+  -- Extras agrupados como "nombre:valor" separados por coma
+  GROUP_CONCAT(CONCAT(fc.nombre, ':', pf.valor) 
+               ORDER BY fc.nombre
+               SEPARATOR ',') AS extras
+
+FROM listing l
+JOIN property p
+  ON l.property_id = p.property_id
+JOIN location loc
+  ON p.location_id = loc.location_id
+JOIN age_range ar
+  ON p.age_range_id = ar.age_range_id
+LEFT JOIN energy_certificate ec
+  ON p.property_id = ec.property_id
+LEFT JOIN property_feature pf
+  ON p.property_id = pf.property_id
+LEFT JOIN feature_catalog fc
+  ON pf.feature_id = fc.feature_id
+
+WHERE
+  l.price_kind = 'sale_price'
+  AND l.scrape_status = 'Success'
+
+GROUP BY l.listing_id
+ORDER BY l.scraped_at DESC;
+
+
+
+
+SELECT
+  l.listing_id,
+  l.url,
+  l.price_eur        AS sale_price,
+  l.scraped_at,
+  l.description,
+
+  p.property_id,
+  p.property_native_id,
+  p.latitude,
+  p.longitude,
+  p.superficie_construida,
+  p.superficie_util,
+  p.habitaciones,
+  p.banos,
+  p.planta,
+  p.estado_conservacion,
+
+  loc.barrio,
+  loc.distrito,
+
+  ar.label          AS age_range,
+
+  ec.classification AS energy_class,
+  ec.consumo_rating AS energy_consumo_rating,
+  ec.emisiones_rating AS energy_emisiones_rating,
+  ec.emision_value  AS energy_emision_value,
+  ec.consumption_value AS energy_consumption_value,
+
+  -- Extras agrupados como "nombre:valor" separados por coma
+  GROUP_CONCAT(CONCAT(fc.nombre, ':', pf.valor) 
+               ORDER BY fc.nombre
+               SEPARATOR ',') AS extras
+
+FROM listing l
+JOIN property p
+  ON l.property_id = p.property_id
+JOIN location loc
+  ON p.location_id = loc.location_id
+JOIN age_range ar
+  ON p.age_range_id = ar.age_range_id
+LEFT JOIN energy_certificate ec
+  ON p.property_id = ec.property_id
+LEFT JOIN property_feature pf
+  ON p.property_id = pf.property_id
+LEFT JOIN feature_catalog fc
+  ON pf.feature_id = fc.feature_id
+
+WHERE
+  l.price_kind = 'sale_price'
+  AND l.scrape_status = 'Success'
+
+GROUP BY l.listing_id
+ORDER BY l.scraped_at DESC;
+
+
+SELECT
+  l.listing_id,
+  l.url,
+  l.price_eur        AS sale_price,
+  l.scraped_at,
+  l.description,
+  
+  p.property_id,
+  p.property_native_id,
+  p.latitude,
+  p.longitude,
+  p.superficie_construida,
+  p.superficie_util,
+  p.habitaciones,
+  p.banos,
+  p.planta,
+  p.estado_conservacion,
+  
+  loc.barrio,
+  loc.distrito,
+  
+  ar.label          AS age_range,
+  
+  ec.classification       AS energy_classification,
+  ec.consumo_rating       AS energy_consumo_rating,
+  ec.emisiones_rating     AS energy_emisiones_rating,
+  ec.emision_value        AS energy_emision_value,
+  ec.consumption_value    AS energy_consumption_value,
+  
+  fc.nombre         AS feature_name,
+  pf.valor          AS feature_value
+
+FROM listing l
+JOIN property p
+  ON l.property_id = p.property_id
+JOIN location loc
+  ON p.location_id = loc.location_id
+JOIN age_range ar
+  ON p.age_range_id = ar.age_range_id
+LEFT JOIN energy_certificate ec
+  ON p.property_id = ec.property_id
+LEFT JOIN property_feature pf
+  ON p.property_id = pf.property_id
+LEFT JOIN feature_catalog fc
+  ON pf.feature_id = fc.feature_id
+
+WHERE
+  l.price_kind    = 'sale_price'
+  AND l.scrape_status = 'Success'
+
+ORDER BY
+  l.listing_id,
+  fc.nombre;
+  
+  
+  
+SELECT
+  l.listing_id,
+  l.url,
+  l.price_eur       AS sale_price,
+  l.scraped_at,
+  l.description,
+
+  p.property_id,
+  p.property_native_id,
+  p.latitude,
+  p.longitude,
+  p.superficie_construida,
+  p.superficie_util,
+  p.habitaciones,
+  p.banos,
+  p.planta,
+  p.estado_conservacion,
+
+  loc.barrio,
+  loc.distrito,
+
+  ar.label          AS age_range,
+
+  ec.classification       AS energy_classification,
+  ec.consumo_rating       AS energy_consumo_rating,
+  ec.emisiones_rating     AS energy_emisiones_rating,
+  ec.emision_value        AS energy_emision_value,
+  ec.consumption_value    AS energy_consumption_value
+
+FROM listing l
+JOIN property p
+  ON l.property_id = p.property_id
+JOIN location loc
+  ON p.location_id = loc.location_id
+JOIN age_range ar
+  ON p.age_range_id = ar.age_range_id
+LEFT JOIN energy_certificate ec
+  ON p.property_id = ec.property_id
+
+WHERE
+  l.price_kind    = 'sale_price'
+  AND l.scrape_status = 'Success'
+
+ORDER BY
+  l.scraped_at DESC;
+  
+  
+  
+SELECT *
+FROM listing l
+JOIN property p   ON l.property_id = p.property_id
+JOIN location loc ON p.location_id = loc.location_id
+JOIN age_range ar ON p.age_range_id = ar.age_range_id
+LEFT JOIN energy_certificate ec ON p.property_id = ec.property_id
+WHERE l.price_kind='sale_price'
+  AND l.scrape_status='Success';
+  
+  
+SELECT *
+        FROM listing l
+        JOIN property p   ON l.property_id = p.property_id
+        JOIN location loc ON p.location_id = loc.location_id
+        JOIN age_range ar ON p.age_range_id = ar.age_range_id
+        LEFT JOIN energy_certificate ec ON p.property_id = ec.property_id
+        WHERE l.price_kind='rent_month'
+        AND l.scrape_status='Success';

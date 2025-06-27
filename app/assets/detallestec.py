@@ -11,8 +11,19 @@ En esta sección se presentan resultados detallados de los modelos utilizados en
 
 # Imagen de resultados de métricas por modelo y clúster
 st.subheader("📊 Comparativa de Modelos por Clúster")
-imagen_resultados = Image.open("comparativoclusventas.jpg")
+imagen_resultados = Image.open("stream para imágenes/comparativoclusventas.jpg")
 st.image(imagen_resultados, caption="Resultados de evaluación de modelos por clúster", use_column_width=True)
+
+# Imagen de las features importances
+st.subheader("📊 Features importances")
+imagen_resultados = Image.open("stream para imágenes/variablesVenta.png")
+st.image(imagen_resultados, caption="Variables que más influyen al predecir las ventas", use_column_width=True)
+
+imagen_resultados = Image.open("stream para imágenes/variablesAlquiler.png")
+st.image(imagen_resultados, caption="Variables que más influyen al predecir los alquileres", use_column_width=True)
+
+
+
 
 # Puedes seguir añadiendo más secciones e imágenes:
 # st.subheader("Otro resultado")
